@@ -33,7 +33,7 @@ function evolve(replica::Replica, h::Hamiltonian)
 
 	new_state = flip_random_bit(replica.state)
 
-
+	#VERIFY this algorithm is correct
 	criterion = exp(-replica.B*(evaluate_energy(replica.state, h) - evaluate_energy(new_state, h)))
 	println(criterion)
 	
@@ -67,6 +67,28 @@ return rand(1:5)
 end
 
 
+function propose_echange(replica1, replica2, h)
+
+	delta = (replica1.B - replica2.B)*(evaluate_energy(replica1.state, h) - evaluate_energy(replica2.state, h))
+
+	if delta > 0
+
+		W = exp(-delta)
+
+	elseif delta <= 0
+
+		W = 1
+
+	end
+
+	if rand() < W 
+		return true 
+	else 
+		return false
+	end
+
+end
+
 function main()
 
 	#Number of replicas
@@ -78,10 +100,33 @@ function main()
 	#Come back and define a way to fill this
 	system_sizes = Array{UInt8}(1:N)
 
+	#Defining these is what Tameem suggested we research
 	temperatures = Array{UInt8}(1:N)
 
-	
+	#Generate Replicas
+	for i = (1:N)
 
+		replica = Replica(system_sizes[i], temperatures[i], rand(0:2^(STATE_LENGTH)-1))
+
+		replica_list[i] = replica
+	end
+
+	stop::Bool = false
+
+	#This variable decides which pairs are considered for exchange
+	#it is functionally a boolean
+	toggle::UInt8 = 0
+
+	while stop == false
+
+		toggle = (toggle + 1) % 2
+
+		i::UInt8 = 0
+
+		stop = true
+
+
+	end
 	
 end
 
