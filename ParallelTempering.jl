@@ -19,14 +19,10 @@ mutable struct Replica
 
 	state::UInt8
 
-end
-
-#Begin definition of all the Replica class functions
-function change_temperature(replica::Replica, new_B::Float64)
-
-	replica.B = new_B
+	ID::UInt8
 
 end
+
 
 #Markov chain evolution
 function evolve(replica::Replica, h::Hamiltonian)
@@ -67,7 +63,7 @@ return rand(1:5)
 end
 
 
-function propose_echange(replica1, replica2, h)
+function propose_exchange(replica1::Replica, replica2::Replica, h::Hamiltonian)
 
 	delta = (replica1.B - replica2.B)*(evaluate_energy(replica1.state, h) - evaluate_energy(replica2.state, h))
 
@@ -89,12 +85,30 @@ function propose_echange(replica1, replica2, h)
 
 end
 
+#exchanges the replicas (but not their temperature), replica_list[index] <-> replica_list[index + 1]
+function exchange(replica_list::Vector{Replica}, index::UInt8)
+
+	replica1 = replica_list[index]
+
+	temp_B = replica_list[index].B
+
+	replica_list[index].B = replica_list[index + 1].B 
+
+	replica_list[index + 1].B = temp_B
+
+	replica_list[index] = replica_list[index + 1]
+
+	replica_list[index + 1] = replica1
+
+end
+
+
 function main()
 
 	#Number of replicas
 	N::UInt8 = 10
 
-
+	h::Hamiltonian = Hamiltonian(2)
 	replica_list = Array{Replica}(undef, N)
 
 	#Come back and define a way to fill this
@@ -116,7 +130,7 @@ function main()
 	#This variable decides which pairs are considered for exchange
 	#it is functionally a boolean
 	toggle::UInt8 = 0
-	N = 6
+
 	while stop == false
 
 		toggle = (toggle + 1) % 2
@@ -132,12 +146,31 @@ function main()
 		end
 
 		for i in indeces
-			println(i)
-			readline()
+
+			if propose_exchange(replica_list[i], replica_list[i+1], h)
+
+				exchange(replica_list, i)
+
+			end
+		end
+
+		for replica in replica_list
+			evolve(replica, h)
 		end
 	end
 
 	
 end
 
-main()
+#main()
+
+test::Replica = Replica(1,1,1,5)
+test2::Replica = Replica(2,2,2,6)
+
+replica_list = [test, test2]
+
+for i in replica_list
+
+	print(i)
+
+end
