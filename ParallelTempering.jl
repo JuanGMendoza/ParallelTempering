@@ -116,17 +116,27 @@ function main()
 	#This variable decides which pairs are considered for exchange
 	#it is functionally a boolean
 	toggle::UInt8 = 0
-
+	N = 6
 	while stop == false
 
 		toggle = (toggle + 1) % 2
 
-		i::UInt8 = 0
+		#This appropriately produces the indeces of the left-most element
+		#of the pairs to be proposed for exchange
 
-		stop = true
+		if N % 2 == 1
 
+			indeces = (1 + toggle : 2 : N - 1 + toggle)
+		else
+			indeces = (1 + toggle : 2 : N - toggle)
+		end
 
+		for i in indeces
+			println(i)
+			readline()
+		end
 	end
+
 	
 end
 
