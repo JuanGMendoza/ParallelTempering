@@ -6,7 +6,11 @@ STATE_LENGTH = 8
 
 mutable struct Hamiltonian
 
-	placeHolder::UInt8
+	#Transverse Field
+	h::Float64
+
+	#Interaction Terms
+	J::Array{Float64}
 end
 
 mutable struct Replica
@@ -58,8 +62,26 @@ end
 #To finish later
 function evaluate_energy(state::UInt8, h::Hamiltonian)
 
-return rand(1:5)
+	E::Float64 = 0
 
+	string = bitstring(state)
+
+	for spin in string
+
+			E = E - (-1)^Int8(spin)*h.h
+
+	end
+
+	for i in (1:STATE_LENGTH-1)
+
+		for j in (i+1:STATE_LENGTH)
+
+			E = E + h.J[i,j]*(-1)^((UInt8(string[i]) + UInt8(string[j])) % 2)
+
+			println(string[i],string[j], ' ',h.J[i,j]*(-1)^((UInt8(string[i]) + UInt8(string[j])) % 2) )
+		end
+	end
+	return E
 end
 
 
@@ -162,15 +184,4 @@ function main()
 	
 end
 
-#main()
 
-test::Replica = Replica(1,1,1,5)
-test2::Replica = Replica(2,2,2,6)
-
-replica_list = [test, test2]
-
-for i in replica_list
-
-	print(i)
-
-end
