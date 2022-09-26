@@ -17,9 +17,6 @@ end
 
 mutable struct Replica
 
-	#Size
-	L::UInt8
-
 	#Inverse Temperature
 	B::Float64
 
@@ -89,12 +86,11 @@ function propose_exchange(replica1::Replica, replica2::Replica, h::Hamiltonian)
 
 	if delta < 0
 
-		W = exp(delta)
+		return true
 
 	elseif delta >= 0
 
-		W = 1
-		return true
+		W = exp(-delta)
 
 	end
 
@@ -161,9 +157,6 @@ function main(h::Hamiltonian)
 
 	replica_list = Array{Replica}(undef, N)
 
-	#Come back and define a way to fill this
-	system_sizes = Array{UInt8}(1:N)
-
 	#Defining these is what Tameem suggested we research
 	temperatures = Array{UInt8}(1:N)
 
@@ -172,7 +165,7 @@ function main(h::Hamiltonian)
 	#Generate Replicas
 	for i = (1:N)
 
-		replica = Replica(system_sizes[i], temperatures[i].^-1, rand(0:2^(STATE_LENGTH)-1))
+		replica = Replica(temperatures[i].^-1, rand(0:2^(STATE_LENGTH)-1))
 
 		replica_list[i] = replica
 	end
@@ -227,8 +220,9 @@ function main(h::Hamiltonian)
 	end
 
 	myplot = plot((1:j),B_path, seriestype = :scatter) 
+	#savefig(myplot, "plot.png")
 	display(myplot)
-	savefig(myplot, "plot.png")
+	
 	readline()
 
 end
