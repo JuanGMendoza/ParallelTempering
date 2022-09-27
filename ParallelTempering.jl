@@ -46,22 +46,23 @@ function evolve!(state::Vector{UInt8}, temperature::Float64 ,h::Hamiltonian )
 
 end
 
-function flip_random_bit!(state::Vector{UInt8})
+function flip_random_bit(state::Vector{UInt8})
+
+	state_copy::Vector{UInt8} = copy(state)
 
 	flip::UInt8 = rand(1:length(state))
 
-	state[flip] = state[flip] ⊻ 1
+	state_copy[flip] = state_copy[flip] ⊻ 1
 
+	return state_copy
 
 end
 
-function evaluate_energy(state::UInt8, h::Hamiltonian)
+function evaluate_energy(state::Vector{UInt8}, h::Hamiltonian)
 
 	E::Float64 = 0
 
-	string = bitstring(state)
-
-	for spin in string
+	for spin in state
 
 			E = E - (-1)^Int8(spin)*h.h
 
@@ -71,9 +72,8 @@ function evaluate_energy(state::UInt8, h::Hamiltonian)
 
 		for j in (i+1:STATE_LENGTH)
 
-			E = E + h.J[i,j]*(-1)^((UInt8(string[i]) ⊻ UInt8(string[j])))
+			E = E + h.J[i,j]*(-1)^(state[i] ⊻ state[j]))
 
-			#println(string[i],string[j], ' ',h.J[i,j]*(-1)^((UInt8(string[i]) + UInt8(string[j])) % 2) )
 		end
 	end
 	return E
