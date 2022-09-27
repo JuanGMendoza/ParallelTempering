@@ -20,15 +20,15 @@ mutable struct Replica
 	#Inverse Temperature
 	B::Float64
 
-	state::UInt8
+	location::UInt8
 
 end
 
 
 #Markov chain evolution
-function evolve!(replica::Replica, h::Hamiltonian)
+function evolve!(state::Vector{UInt8}, temperature::Float64 ,h::Hamiltonian )
 
-	new_state = flip_random_bit(replica.state)
+	new_state = flip_random_bit(state)
 
 	#VERIFY this algorithm is correct
 	criterion = exp(replica.B*(evaluate_energy(replica.state, h) - evaluate_energy(new_state, h)))
@@ -46,12 +46,12 @@ function evolve!(replica::Replica, h::Hamiltonian)
 
 end
 
-function flip_random_bit(bits::UInt8)
+function flip_random_bit!(state::Vector{UInt8})
 
-	flip::UInt8 = 2^rand(0:STATE_LENGTH-1)
+	flip::UInt8 = rand(1:length(state))
 
-	#XOR
-	return bits ⊻ flip
+	state[flip] = state[flip] ⊻ 1
+
 
 end
 
@@ -160,7 +160,8 @@ function main(h::Hamiltonian)
 	#Defining these is what Tameem suggested we research
 	temperatures = Array{UInt8}(1:N)
 
-	stop::Bool = false
+	#2-D array where each row represents the bitstring state of a replica
+	#states::Array{Int8} = zeros(num_replicas, STATE_LENGTH)
 
 	#Generate Replicas
 	for i = (1:N)
@@ -169,7 +170,6 @@ function main(h::Hamiltonian)
 
 		replica_list[i] = replica
 	end
-
 
 	replica_track = replica_list[1]
 
@@ -227,8 +227,26 @@ function main(h::Hamiltonian)
 
 end
 
-h::Hamiltonian = Hamiltonian(3,ones(8,8))
+#h::Hamiltonian = Hamiltonian(3,ones(8,8))
 
-println(bitstring(brute_force_ground_state(h)[2]))
+#println(bitstring(brute_force_ground_state(h)[2]))
 
-main(h)
+#main(h)
+
+num_replicas = 3
+
+states::Array{UInt8} = zeros(num_replicas, STATE_LENGTH)
+
+
+state = states[1,:]
+
+state1::Vector{UInt8} = [1,1,1,1]
+
+println(state1)
+state[1] = 1
+
+flip_random_bit!(state1)
+println(state1)
+
+
+#println(states)
