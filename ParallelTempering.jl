@@ -1,10 +1,11 @@
 using Random
-using Plots
+#using Plots
 
 #How many bits define a state
 #If you change this variable you must change the data type for all other state variables
 STATE_LENGTH = 8
 
+#H = h * spins + Ji,j * spin_i * spin_j
 mutable struct Hamiltonian
 
 	#Local Field
@@ -26,24 +27,26 @@ end
 
 
 #Markov chain evolution
-function evolve!(state::Vector{UInt8}, temperature::Float64 ,h::Hamiltonian)
+function evolve!(state::Vector{UInt8}, B::Float64 ,h::Hamiltonian)
 
-	println("input: ", state)
-	new_state = flip_random_bit(state)
-	println("flipped: ", new_state)
+	random_bit::UInt8 = rand(1:length(state))
+	new_state = copy(state)
+	new_state[random_bit] = new_state[random_bit] ⊻ 1
+	
 	#VERIFY this algorithm is correct
-	criterion = exp(temperature*(evaluate_energy(state, h) - evaluate_energy(new_state, h)))
+	criterion = exp(B*(evaluate_energy(state, h) - evaluate_energy(new_state, h)))
 	
 	println("criterion: ", criterion)
 	if criterion < 1
 
 	 	if rand() < criterion
 
-	 		state = new_state
+	 		state[random_bit] = state[random_bit] ⊻ 1
 	 	end
 	
 	else
-		state = new_state
+		println("")
+		state[random_bit] = state[random_bit] ⊻ 1
 	end
 
 	println("output should be: ", state)
@@ -75,7 +78,7 @@ function evaluate_energy(state::Vector{UInt8}, h::Hamiltonian)
 
 		for j in (i+1:length(state))
 
-			E = E + h.J[i,j]*(-1)^(state[i] ⊻ state[j]))
+			E = E + h.J[i,j]*(-1)^(state[i] ⊻ state[j])
 
 		end
 	end
@@ -230,26 +233,23 @@ function main(h::Hamiltonian)
 
 end
 
-#h::Hamiltonian = Hamiltonian(3,ones(8,8))
+function test()
 
-#println(bitstring(brute_force_ground_state(h)[2]))
+	state1::Vector{UInt8} = [0,0,0,0]
 
-#main(h)
+	h = Hamiltonian(1, zeros(length(state1),length(state1)))
 
-num_replicas = 3
+	println(evaluate_energy(state1, h))
 
-states::Array{UInt8} = zeros(num_replicas, STATE_LENGTH)
+	println(evaluate_energy(flip_random_bit(state1),  h))
+	evolve!(state1, 1/10, h)
+
+	println(state1)
+end
+test()
 
 
-state = states[1,:]
 
-state1::Vector{UInt8} = [1,1,1,1]
-
-println(state1)
-state[1] = 1
-
-flip_random_bit!(state1)
-println(state1)
 
 
 #println(states)
