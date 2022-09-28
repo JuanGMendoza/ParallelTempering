@@ -26,24 +26,27 @@ end
 
 
 #Markov chain evolution
-function evolve!(state::Vector{UInt8}, temperature::Float64 ,h::Hamiltonian )
+function evolve!(state::Vector{UInt8}, temperature::Float64 ,h::Hamiltonian)
 
+	println("input: ", state)
 	new_state = flip_random_bit(state)
-
+	println("flipped: ", new_state)
 	#VERIFY this algorithm is correct
-	criterion = exp(replica.B*(evaluate_energy(replica.state, h) - evaluate_energy(new_state, h)))
+	criterion = exp(temperature*(evaluate_energy(state, h) - evaluate_energy(new_state, h)))
 	
+	println("criterion: ", criterion)
 	if criterion < 1
 
 	 	if rand() < criterion
 
-	 		replica.state = new_state
+	 		state = new_state
 	 	end
 	
 	else
-		replica.state = new_state
+		state = new_state
 	end
 
+	println("output should be: ", state)
 end
 
 function flip_random_bit(state::Vector{UInt8})
@@ -68,9 +71,9 @@ function evaluate_energy(state::Vector{UInt8}, h::Hamiltonian)
 
 	end
 
-	for i in (1:STATE_LENGTH-1)
+	for i in (1:length(state)-1)
 
-		for j in (i+1:STATE_LENGTH)
+		for j in (i+1:length(state))
 
 			E = E + h.J[i,j]*(-1)^(state[i] ⊻ state[j]))
 
