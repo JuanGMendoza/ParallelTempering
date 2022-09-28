@@ -21,7 +21,7 @@ mutable struct Replica
 	#Inverse Temperature
 	B::Float64
 
-	location::UInt8
+	state::Vector{UInt8}
 
 end
 
@@ -235,16 +235,23 @@ end
 
 function test()
 
-	state1::Vector{UInt8} = [0,0,0,0]
+	states::Vector{Vector{UInt8}} = [zeros(4), zeros(4)]
 
-	h = Hamiltonian(1, zeros(length(state1),length(state1)))
+	h = Hamiltonian(1, zeros(4,4))
 
-	println(evaluate_energy(state1, h))
+	println(states)
+	replica = Replica(1/10, states[1])
 
-	println(evaluate_energy(flip_random_bit(state1),  h))
-	evolve!(state1, 1/10, h)
+	println(replica.state)
+	replica.state[1] = 1
+	println(replica.state)
+	println(states)
 
-	println(state1)
+	#println(evaluate_energy(state1, h))
+
+	#println(evaluate_energy(flip_random_bit(state1),  h))
+	#evolve!(state1, 1/10, h)
+
 end
 test()
 
