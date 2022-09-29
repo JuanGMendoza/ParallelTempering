@@ -1,5 +1,5 @@
 using Random
-#using Plots
+using Plots
 
 #How many bits define a state
 #If you change this variable you must change the data type for all other state variables
@@ -27,29 +27,28 @@ end
 
 
 #Markov chain evolution
-function evolve!(state::Vector{UInt8}, B::Float64 ,h::Hamiltonian)
+function evolve!(replica::Replica ,h::Hamiltonian)
 
-	random_bit::UInt8 = rand(1:length(state))
-	new_state = copy(state)
+	random_bit::UInt8 = rand(1:length(replica.state))
+	new_state = copy(replica.state)
 	new_state[random_bit] = new_state[random_bit] ⊻ 1
 	
 	#VERIFY this algorithm is correct
-	criterion = exp(B*(evaluate_energy(state, h) - evaluate_energy(new_state, h)))
+	criterion = exp(replica.B*(evaluate_energy(replica.state, h) - evaluate_energy(new_state, h)))
 	
 	println("criterion: ", criterion)
 	if criterion < 1
 
 	 	if rand() < criterion
 
-	 		state[random_bit] = state[random_bit] ⊻ 1
+	 		replica.state[random_bit] = replica.state[random_bit] ⊻ 1
 	 	end
 	
 	else
-		println("")
-		state[random_bit] = state[random_bit] ⊻ 1
+		replica.state[random_bit] = replica.state[random_bit] ⊻ 1
 	end
 
-	println("output should be: ", state)
+	
 end
 
 function flip_random_bit(state::Vector{UInt8})
@@ -152,7 +151,7 @@ function brute_force_ground_state(h::Hamiltonian)
 	return min, minState
 end
 
-function main(h::Hamiltonian)
+function main(h::Hamiltonian, size::UInt8)
 
 	#Temperature Path
 	B_path = zeros(40)
@@ -161,20 +160,20 @@ function main(h::Hamiltonian)
 	#Number of replicas
 	N::UInt8 = 10
 
-	replica_list = Array{Replica}(undef, N)
+	replica_list::Vector{Replica} = Vector{Replica}(undef, N)
+
+
+	state::Vector{UInt8} = Vector{UInt8}(undef, size)
 
 	#Defining these is what Tameem suggested we research
-	temperatures = Array{UInt8}(1:N)
-
-	#2-D array where each row represents the bitstring state of a replica
-	#states::Array{Int8} = zeros(num_replicas, STATE_LENGTH)
+	temperatures = Vector{UInt8}(1:N)
 
 	#Generate Replicas
 	for i = (1:N)
 
-		replica = Replica(temperatures[i].^-1, rand(0:2^(STATE_LENGTH)-1))
+		state = rand([0,1], size)
+		replica_list[i] = Replica(temperatures[i].^-1, state)
 
-		replica_list[i] = replica
 	end
 
 	replica_track = replica_list[1]
@@ -184,7 +183,7 @@ function main(h::Hamiltonian)
 	toggle::UInt8 = 0
 
 	j = 1
-	while j < 40
+	while j <= 40
 
 		toggle = (toggle + 1) % 2
 
@@ -222,7 +221,7 @@ function main(h::Hamiltonian)
 
 	for replica in replica_list
 
-		println(bitstring(replica.state))
+		println(replica.state)
 	end
 
 	myplot = plot((1:j),B_path, seriestype = :scatter) 
@@ -235,25 +234,29 @@ end
 
 function test()
 
-	states::Vector{Vector{UInt8}} = [zeros(4), zeros(4)]
+	#states::Vector{Vector{UInt8}} = [zeros(4), zeros(4)]
 
-	h = Hamiltonian(1, zeros(4,4))
+	#h = Hamiltonian(1, zeros(4,4))
 
-	println(states)
-	replica = Replica(1/10, states[1])
+	#println(states)
+	#replica = Replica(1/10, states[1])
 
-	println(replica.state)
-	replica.state[1] = 1
-	println(replica.state)
-	println(states)
+	#println(replica.state)
+	#replica.state[1] = 1
+	#println(replica.state)
+	#println(states)
 
 	#println(evaluate_energy(state1, h))
 
 	#println(evaluate_energy(flip_random_bit(state1),  h))
 	#evolve!(state1, 1/10, h)
 
+
+	
 end
-test()
+
+h = Hamiltonian(1, zeros(4,4))
+main(h, UInt8(4))
 
 
 
