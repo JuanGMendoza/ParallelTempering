@@ -1,3 +1,5 @@
+using JLD2
+
 #spin -1 -> 0
 #spin 1 -> 1
 
@@ -15,10 +17,16 @@ end
 
 mutable struct Replica
 
+	#Temperature
+	T::UInt8
+
 	#Inverse Temperature
 	B::Float64
 
 	state::Vector{UInt8}
+
+	#Number to identify the replica as it moves through B space
+	ID::UInt8
 
 end
 
@@ -32,8 +40,7 @@ function evolve!(replica::Replica ,h::Hamiltonian)
 	
 	#VERIFY this algorithm is correct
 	criterion = exp(replica.B*(evaluate_energy(replica.state, h) - evaluate_energy(new_state, h)))
-	
-	println("criterion: ", criterion)
+
 	if criterion < 1
 
 	 	if rand() < criterion
@@ -60,6 +67,7 @@ function flip_random_bit(state::Vector{UInt8})
 
 end
 
+#Returns the energy corresponding to the input state
 function evaluate_energy(state::Vector{UInt8}, h::Hamiltonian)
 
 	E::Float64 = 0
@@ -84,7 +92,7 @@ end
 
 function propose_exchange(replica1::Replica, replica2::Replica, h::Hamiltonian)
 
-	delta = (replica1.B - replica2.B)*(evaluate_energy(replica1.state, h) - evaluate_energy(replica2.state, h))
+	delta::Float64 = (replica1.B - replica2.B)*(evaluate_energy(replica1.state, h) - evaluate_energy(replica2.state, h))
 
 	if delta < 0
 
@@ -92,7 +100,7 @@ function propose_exchange(replica1::Replica, replica2::Replica, h::Hamiltonian)
 
 	elseif delta >= 0
 
-		W = exp(-delta)
+		W::Float64 = exp(-delta)
 
 	end
 
@@ -107,9 +115,9 @@ end
 #exchanges the replicas (but not their temperature), replica_list[index] <-> replica_list[index + 1]
 function exchange!(replica_list::Vector{Replica}, index::UInt8)
 
-	replica1 = replica_list[index]
+	replica1::Replica = replica_list[index]
 
-	temp_B = replica_list[index].B
+	temp_B::Float64 = replica_list[index].B
 
 	replica_list[index].B = replica_list[index + 1].B 
 
@@ -121,16 +129,6 @@ function exchange!(replica_list::Vector{Replica}, index::UInt8)
 
 end
 
-#Discuss equation 4.4 on Hukushima with Tameem
-function autocorrelation()
-
-	p = rand()
-	if p < .05
-		return true
-	end
-
-	return false
-end
 
 function brute_force_ground_state(h::Hamiltonian)
 
@@ -147,3 +145,80 @@ function brute_force_ground_state(h::Hamiltonian)
 	end
 	return min, minState
 end
+
+
+function save_history(filename::String, replicas::Vector{Replica}, t::UInt8)
+
+	jldopen(filename, "a+") do file
+		
+		i = 1
+		groupString = "t" * string(t) * "/" * "replica" 
+		println(groupString)
+
+		for replica in replicas
+
+			file[groupString * string(i)] = replica
+			#file[groupString * string(i) * "/state"] = replica.state
+			#file[groupString * string(i) * "/ID"] = replica.ID
+			#file[groupString * string(i) * "/T"] = replica.T
+			i += 1
+
+		end
+		
+	end
+end
+
+#Returns all replicas at temperature T from file fileName, ordered by timestep
+function load_T_history(fileName::String, T::UInt8)
+
+	
+	#characters in the word replica + 1
+	replicaLength = 8
+	
+	jldopen(fileName, "r") do file
+
+		timesteps = length(keys(file))
+		replicasPerTimestep = parse(UInt8, last(keys(file["t1"]))[replicaLength:end])
+		replicaList::Vector{Replica} = Vector{Replica}(undef, timesteps)
+		indexOfDesiredT = 0
+
+		for j in (1:replicasPerTimestep)
+
+			 if file["t1/replica" * string(j)].T == T
+			 	indexOfDesiredT = j
+			 	break
+			 end
+		end 
+		
+
+		for k in (1:timesteps)
+			
+			replicaList[k] = file["t" * string(k) * "/replica" * string(indexOfDesiredT)]
+			
+		end
+	end
+	
+	return replicaList
+end
+
+function calculate_expectation(operator::Function, states::Vector{Vector{UInt8}})
+
+	average::Float64 = 0
+
+	for state in states
+		average += operator(state)
+	end
+	return average/length(states)
+
+end
+
+function magnetization(state::Vector{UInt8})
+
+	m = 0 
+	for spin in state
+
+		m += (-1)^(spin ⊻ 1)
+	end
+	return m
+end
+

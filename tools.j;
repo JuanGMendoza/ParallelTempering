@@ -1,3 +1,0 @@
-using ParallelTempering
-
-prinln(flip_random_bit([1,1,1,1,1]))
