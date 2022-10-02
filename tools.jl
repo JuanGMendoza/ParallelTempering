@@ -147,7 +147,7 @@ function brute_force_ground_state(h::Hamiltonian)
 end
 
 
-function save_history(filename::String, replicas::Vector{Replica}, t::UInt8)
+function save_history(filename::String, replicas::Vector{Replica}, t::Int64)
 
 	jldopen(filename, "a+") do file
 		
@@ -174,12 +174,12 @@ function load_T_history(fileName::String, T::UInt8)
 	
 	#characters in the word replica + 1
 	replicaLength = 8
-	
+	replicaList::Vector{Replica} = []
 	jldopen(fileName, "r") do file
 
 		timesteps = length(keys(file))
 		replicasPerTimestep = parse(UInt8, last(keys(file["t1"]))[replicaLength:end])
-		replicaList::Vector{Replica} = Vector{Replica}(undef, timesteps)
+		replicaList = Vector{Replica}(undef, timesteps)
 		indexOfDesiredT = 0
 
 		for j in (1:replicasPerTimestep)
@@ -200,15 +200,15 @@ function load_T_history(fileName::String, T::UInt8)
 	
 	return replicaList
 end
-
-function calculate_expectation(operator::Function, states::Vector{Vector{UInt8}})
+#load_T_history("test_history.jld2", UInt8(10))
+function calculate_expectation(operator::Function, replicas::Vector{Replica})
 
 	average::Float64 = 0
 
-	for state in states
-		average += operator(state)
+	for replica in replicas
+		average += operator(replica.state)
 	end
-	return average/length(states)
+	return average/length(replicas)
 
 end
 

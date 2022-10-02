@@ -6,7 +6,7 @@ include("tools.jl")
 function main(h::Hamiltonian, size::UInt8)
 
 
-	history = "test_history.jld2"
+	history = "test_history_2.jld2"
 
 	#Number of replicas
 	N::UInt8 = 10
@@ -30,8 +30,8 @@ function main(h::Hamiltonian, size::UInt8)
 	#it is functionally a boolean
 	toggle::UInt8 = 0
 
-	j::UInt8 = 1
-	while j <= 40
+	j = 1
+	while j <= 10000
 
 		toggle = toggle ⊻ 1
 
@@ -73,7 +73,7 @@ function main(h::Hamiltonian, size::UInt8)
 end
 
 h = Hamiltonian(1, zeros(4,4))
-main(h, UInt8(4))
+main(h, UInt8(2))
 
 
 
