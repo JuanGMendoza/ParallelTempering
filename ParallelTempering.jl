@@ -73,7 +73,7 @@ function main(h::Hamiltonian, size::UInt8)
 end
 
 h = Hamiltonian(1, zeros(4,4))
-main(h, UInt8(2))
+main(h, UInt8(4))
 
 
 
