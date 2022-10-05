@@ -94,7 +94,7 @@ end
 
 function propose_exchange(replica1::Replica, replica2::Replica, h::Hamiltonian)
 
-	delta::Float64 = (replica1.B - replica2.B)*(evaluate_energy(replica1.state, h) - evaluate_energy(replica2.state, h))
+	delta::Float64 = -(replica1.B - replica2.B)*(evaluate_energy(replica1.state, h) - evaluate_energy(replica2.state, h))
 
 	#println(delta)
 	if delta < 0
@@ -176,14 +176,12 @@ function save_history(filename::String, replicas::Vector{Replica}, t::Int64)
 		
 		i = 1
 		groupString = "t" * string(t) * "/" * "replica" 
-		println(groupString)
+		#println(groupString)
 
 		for replica in replicas
 
 			file[groupString * string(i)] = replica
-			#file[groupString * string(i) * "/state"] = replica.state
-			#file[groupString * string(i) * "/ID"] = replica.ID
-			#file[groupString * string(i) * "/T"] = replica.T
+
 			i += 1
 
 		end
@@ -228,7 +226,9 @@ function load_ID_history(filename::String, ID::UInt8)
 	
 	#characters in the word replica + 1
 	replicaLength = 8	
+
 	replicaList::Vector{Replica} = []
+
 	jldopen(filename) do file
 		timesteps = length(keys(file))
 		replicaList = Vector{Replica}(undef, timesteps)
