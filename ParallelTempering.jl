@@ -6,8 +6,8 @@ include("tools.jl")
 function main(h::Hamiltonian, size::UInt8)
 
 
-	history = "test_history_2.jld2"
-
+	history = "test_measurement.jld2"
+	jldsave(history, measurement="magnetization")
 	#Number of replicas
 	N::UInt8 = 10
 
@@ -45,7 +45,8 @@ function main(h::Hamiltonian, size::UInt8)
 			indices = (1 + toggle : 2 : N - toggle)
 		end
 
-		save_history(history, replica_list, j)
+		#save_all_history(history, replica_list, j)
+		save_measurements(history, replica_list, j, magnetization, "M")
 
 		for replica in replica_list
 			evolve!(replica, h)

@@ -170,7 +170,7 @@ function brute_force_ground_state(h::Hamiltonian)
 end
 
 
-function save_history(filename::String, replicas::Vector{Replica}, t::Int64)
+function save_all_history(filename::String, replicas::Vector{Replica}, t::Int64)
 
 	jldopen(filename, "a+") do file
 		
@@ -189,7 +189,44 @@ function save_history(filename::String, replicas::Vector{Replica}, t::Int64)
 	end
 end
 
+#Creates a file containing measurements for input operator for every temperature
+function save_measurements(fileName::String, replicas::Vector{Replica}, t::Int64, operator::Function)
+
+	groupString = "t" * string(t) * "/" * "T"
+
+	jldopen(fileName, "a+") do file
+
+		for replica in replicas
+
+			file[groupString * string(replica.T)] = operator(replica.state)
+
+		end
+	end
+end
+
+#returns the expectation value of all measurements stored in fileName at temperature T
+function load_and_calc_expectation(fileName::String, T::Float64)
+
+	expectation::Float64 = 0
+	timesteps::UInt64 = 0
+
+	jldopen(fileName, "r") do file
+		name = file["measurement"]
+
+		timesteps = length(keys(file))
+
+		for j in (1:timesteps - 1)
+			
+			expectation += file["t" * string(j) * "/T" * string(T)]
+		end
+	end
+
+	return name, expectation/timesteps
+end
+println(load_and_calc_expectation("test_measurement.jld2", Float64(4)))
+
 #Returns all replicas at temperature T from file fileName, ordered by timestep
+#fileName must contain all replica history, created with save_all_history()
 function load_T_history(fileName::String, T::UInt8)
 
 	
@@ -245,7 +282,7 @@ function load_ID_history(filename::String, ID::UInt8)
 	end
 	return replicaList
 end
-#load_T_history("test_history.jld2", UInt8(10))
+
 function calculate_expectation(operator::Function, replicas::Vector{Replica})
 
 	average::Float64 = 0
