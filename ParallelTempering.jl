@@ -3,10 +3,8 @@ using Random
 include("tools.jl")
 
 
-function main(h::Hamiltonian, size::UInt8)
+function main(h::Hamiltonian, size::UInt8, fileName::String)
 
-
-	history = "test_measurement.jld2"
 	jldsave(history, measurement="magnetization")
 	#Number of replicas
 	N::UInt8 = 10
@@ -45,8 +43,7 @@ function main(h::Hamiltonian, size::UInt8)
 			indices = (1 + toggle : 2 : N - toggle)
 		end
 
-		#save_all_history(history, replica_list, j)
-		save_measurements(history, replica_list, j, magnetization, "M")
+		save_measurements(fileName, replica_list, j, magnetization, "M")
 
 		for replica in replica_list
 			evolve!(replica, h)
@@ -73,7 +70,7 @@ function main(h::Hamiltonian, size::UInt8)
 
 end
 
-h = Hamiltonian(1, zeros(4,4))
+h = Hamiltonian(1, zeros(4,4), "test.jld2")
 main(h, UInt8(4))
 
 
