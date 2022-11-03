@@ -1,9 +1,11 @@
 include("tools.jl")
+include("ParallelTempering.jl")
+
 using Plots
 
 k_B = 1#1.380649 * 10^-23
 
-function energy_expec_value(h, T)
+function magnetization_expec_value(h, T)
 
 	stateMax = (2^size(h.J,1)) - 1
 	z = 0
@@ -39,37 +41,39 @@ function energy_expec_value(h, T)
 
 end
 
-h = Hamiltonian(1, zeros(4,4))
+h1 = Hamiltonian(1, zeros(4,4))
+
+main(h1, "unit-test1.jld2")
+
+J = ones(Float64, (4,4))
+h2 = Hamiltonian(2, J)
+
+println("50% Complete")
+main(h2, "unit-test2.jld2")
+
+println("H1 Test:")
 
 for i in (1:10)
-replicas = load_T_history("test_history_2.jld2", UInt8(i))
-println("T= ",i)
-println("Ex: ",energy_expec_value(h, i))
-println("PT: ",calculate_expectation(magnetization, replicas), '\n')
+
+	println("T= ", i)
+	PT = load_and_calc_expectation("unit-test1.jld2", Float64(i))[2]
+	@assert PT != 0
+	difference = magnetization_expec_value(h1, i) - PT
+	
+	println(difference)
 
 end
 
 
-#rep = Replica(7, 1/7, [1,1,1,1], 1)
+println("H2 Test:")
+for i in (1:10)
 
-#rep2 = Replica(6, 1/6, [0,0,0,0], 2)
 
-#list = [rep,rep2]
+	println("T= ", i)
+	PT = load_and_calc_expectation("unit-test2.jld2", Float64(i))[2]
+	@assert PT != 0
+	difference = magnetization_expec_value(h2, i) - PT
+	
+	println(difference)
 
-#println(list)
-
-#exchange!(list, UInt8(1))
-
-#println(list)
-
-#=
-replicas = load_ID_history("test_history_2.jld2", UInt8(1))
-temperatures = Vector{UInt8}(undef, length(replicas))
-
-for i in (1:length(replicas))
-	temperatures[i] = replicas[i].T
 end
-
-display(plot((1:length(temperatures)), temperatures))
-readline()
-=#

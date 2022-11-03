@@ -3,18 +3,21 @@ using Random
 include("tools.jl")
 
 
-function main(h::Hamiltonian, size::UInt8, fileName::String)
+function main(h::Hamiltonian, fileName::String)
 
-	jldsave(history, measurement="magnetization")
+	
 	#Number of replicas
 	N::UInt8 = 10
+	#Size of the states
+	size::UInt8 = length(h.J[1,:])
 
 	replica_list::Vector{Replica} = Vector{Replica}(undef, N)
 
 	state::Vector{UInt8} = Vector{UInt8}(undef, size)
 
 	#Defining these is what Tameem suggested we research
-	temperatures::Vector{UInt8} = Vector{UInt8}(1:N)
+	temperatures::Vector{Float64} = Vector{Float64}(1:N)
+	jldsave(fileName, measurement="magnetization",temps=temperatures)
 
 	#Generate Replicas
 	for i = (1:N)
@@ -43,7 +46,7 @@ function main(h::Hamiltonian, size::UInt8, fileName::String)
 			indices = (1 + toggle : 2 : N - toggle)
 		end
 
-		save_measurements(fileName, replica_list, j, magnetization, "M")
+		save_measurements(fileName, replica_list, j, magnetization)
 
 		for replica in replica_list
 			evolve!(replica, h)
@@ -69,9 +72,6 @@ function main(h::Hamiltonian, size::UInt8, fileName::String)
 
 
 end
-
-h = Hamiltonian(1, zeros(4,4), "test.jld2")
-main(h, UInt8(4))
 
 
 

@@ -118,25 +118,6 @@ end
 #exchanges the replicas (but not their temperature), replica_list[index] <-> replica_list[index + 1]
 function exchange!(replicaList::Vector{Replica}, index::UInt8)
 
-	#println(replicaList)
-	#=
-	replica1::Replica = replica_list[index]
-
-	temp_T::Float64 = replica_list[index].T
-
-	replica_list[index].T = replica_list[index + 1].T
-
-	replica_list[index + 1].T = temp_T
-
-	replica_list[index] = replica_list[index + 1]
-
-	replica_list[index + 1] = replica1
-
-	replica_list[index].B = 1/replica_list[index].T
-	replica_list[index + 1].B = 1/replica_list[index + 1].T 
-
-	=#
-
 	#Discuss efficiency of this
 	temp_state::Vector{UInt8} = replicaList[index].state
 	temp_ID::UInt8 = replicaList[index].ID
@@ -170,6 +151,93 @@ function brute_force_ground_state(h::Hamiltonian)
 end
 
 
+#Creates a file containing measurements for input operator for every temperature
+#Receives a replica list whose order matches the temperature list
+# t represents the timestep of the simulation
+function save_measurements(fileName::String, replicas::Vector{Replica}, t::Int64, operator::Function)
+
+	groupString = "t" * string(t) * "/" 
+
+	jldopen(fileName, "a+") do file
+
+		i::UInt8 = 1
+		for replica in replicas
+
+			
+			file[groupString * string(i) * "/measurement"] = operator(replica.state)
+			i = i + 1
+		end
+	end
+end
+
+#returns the expectation value of all measurements stored in fileName at temperature T
+function load_and_calc_expectation(fileName::String, T::Float64)
+
+	expectation::Float64 = 0
+	timesteps::UInt64 = 0
+	name::String = ""
+	jldopen(fileName, "r") do file
+		name = file["measurement"]
+
+		timesteps = length(keys(file)) - 2
+
+
+		indexOfDesiredT = 0
+		replicasPerTimestep = length(file["temps"])
+
+		for j in (1:replicasPerTimestep)
+
+			if file["temps"][j] == T
+			 	indexOfDesiredT = j
+			 	break
+			end
+		end 
+
+		if indexOfDesiredT == 0
+
+			println("The requested T, was not found amongst the temperatures available in " * filename * string(file["temps"]))
+
+			expectation = 0
+
+		
+
+		else
+			for j in (1:timesteps)
+				
+				expectation += file["t" * string(j) * "/" * string(indexOfDesiredT) * "/measurement"]
+			end
+		end
+	end
+
+	return name, expectation/timesteps
+end
+
+
+function calculate_expectation(operator::Function, replicas::Vector{Replica})
+
+	average::Float64 = 0
+
+	for replica in replicas
+		average += operator(replica.state)
+	end
+	return average/length(replicas)
+
+end
+
+function magnetization(state::Vector{UInt8})
+
+	m = 0 
+	for spin in state
+
+		m += (-1)^(spin ⊻ 1)
+	end
+	return m
+end
+
+#The functions below work with different file formatting#
+#########################################################
+
+
 function save_all_history(filename::String, replicas::Vector{Replica}, t::Int64)
 
 	jldopen(filename, "a+") do file
@@ -189,41 +257,34 @@ function save_all_history(filename::String, replicas::Vector{Replica}, t::Int64)
 	end
 end
 
-#Creates a file containing measurements for input operator for every temperature
-function save_measurements(fileName::String, replicas::Vector{Replica}, t::Int64, operator::Function)
 
-	groupString = "t" * string(t) * "/" * "T"
+#This function tracks a replica through its evolution in temperature space
+#It returns the replica structure at every timestep
+#fileName must have been produced using save_all_history
+function load_ID_history(fileName::String, ID::UInt8)
+	
+	#characters in the word replica + 1
+	replicaLength = 8	
 
-	jldopen(fileName, "a+") do file
+	replicaList::Vector{Replica} = []
 
-		for replica in replicas
-
-			file[groupString * string(replica.T)] = operator(replica.state)
-
-		end
-	end
-end
-
-#returns the expectation value of all measurements stored in fileName at temperature T
-function load_and_calc_expectation(fileName::String, T::Float64)
-
-	expectation::Float64 = 0
-	timesteps::UInt64 = 0
-
-	jldopen(fileName, "r") do file
-		name = file["measurement"]
-
+	jldopen(fileName) do file
 		timesteps = length(keys(file))
-
-		for j in (1:timesteps - 1)
-			
-			expectation += file["t" * string(j) * "/T" * string(T)]
+		replicaList = Vector{Replica}(undef, timesteps)
+		replicasPerTimestep = parse(UInt8, last(keys(file["t1"]))[replicaLength:end])
+		for i in (1:timesteps)
+			for j in (1:replicasPerTimestep)
+				replica = file["t"*string(i)]["replica"*string(j)]
+				if replica.ID == ID
+					replicaList[i] = replica 
+				end
+			end
 		end
-	end
 
-	return name, expectation/timesteps
+	end
+	return replicaList
 end
-println(load_and_calc_expectation("test_measurement.jld2", Float64(4)))
+
 
 #Returns all replicas at temperature T from file fileName, ordered by timestep
 #fileName must contain all replica history, created with save_all_history()
@@ -257,50 +318,5 @@ function load_T_history(fileName::String, T::UInt8)
 	end
 	
 	return replicaList
-end
-
-function load_ID_history(filename::String, ID::UInt8)
-	
-	#characters in the word replica + 1
-	replicaLength = 8	
-
-	replicaList::Vector{Replica} = []
-
-	jldopen(filename) do file
-		timesteps = length(keys(file))
-		replicaList = Vector{Replica}(undef, timesteps)
-		replicasPerTimestep = parse(UInt8, last(keys(file["t1"]))[replicaLength:end])
-		for i in (1:timesteps)
-			for j in (1:replicasPerTimestep)
-				replica = file["t"*string(i)]["replica"*string(j)]
-				if replica.ID == ID
-					replicaList[i] = replica 
-				end
-			end
-		end
-
-	end
-	return replicaList
-end
-
-function calculate_expectation(operator::Function, replicas::Vector{Replica})
-
-	average::Float64 = 0
-
-	for replica in replicas
-		average += operator(replica.state)
-	end
-	return average/length(replicas)
 
 end
-
-function magnetization(state::Vector{UInt8})
-
-	m = 0 
-	for spin in state
-
-		m += (-1)^(spin ⊻ 1)
-	end
-	return m
-end
-
