@@ -23,7 +23,8 @@ function main(h::Hamiltonian, fileName::String)
 	for i = (1:N)
 
 		state = rand([0,1], size)
-		replica_list[i] = Replica(temperatures[i], temperatures[i].^-1, state, i)
+		replica_list[i] = Replica(temperatures[i], temperatures[i].^-1, state, i, Queue{UInt64}())
+		refill_random_bits!(replica_list[i], size)
 
 	end
 
@@ -65,16 +66,5 @@ function main(h::Hamiltonian, fileName::String)
 		
 	end
 
-	for replica in replica_list
-
-		println(replica.state)
-	end
-
 
 end
-
-
-
-
-
-#println(states)

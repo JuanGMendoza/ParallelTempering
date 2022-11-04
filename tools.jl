@@ -1,5 +1,6 @@
 using JLD2
-
+using DataStructures
+using Random
 #spin -1 -> 0
 #spin 1 -> 1
 
@@ -28,13 +29,20 @@ mutable struct Replica
 	#Number to identify the replica as it moves through B space
 	ID::UInt8
 
+	bitsToFlip::Queue{UInt64}
+
+
 end
 
 
 #Markov chain evolution
 function evolve!(replica::Replica ,h::Hamiltonian)
 
-	random_bit::UInt8 = rand(1:length(replica.state))
+	
+	if isempty(replica.bitsToFlip)
+		refill_random_bits!(replica, length(h.J[1,:]))
+	end
+	random_bit::UInt8 = dequeue!(replica.bitsToFlip)
 	new_state = copy(replica.state)
 	new_state[random_bit] = new_state[random_bit] ⊻ 1
 	
@@ -128,8 +136,6 @@ function exchange!(replicaList::Vector{Replica}, index::UInt8)
 	replicaList[index + 1].ID = temp_ID
 	replicaList[index + 1].state = temp_state
 
-
-	#println(replicaList)
 
 end
 
@@ -234,6 +240,27 @@ function magnetization(state::Vector{UInt8})
 	return m
 end
 
+
+#This function takes in a replica and the state size and it
+#replaces the replica.bitsToFlip queue to a new random one
+function refill_random_bits!(replica::Replica, size)
+
+	randomList::Vector{UInt64} = collect(1:size)
+
+	shuffle!(randomList)
+
+	bitsToFlip::Queue{UInt64} = Queue{UInt64}()
+
+	for bit in randomList
+
+		enqueue!(bitsToFlip, bit)
+
+	end
+
+	replica.bitsToFlip = bitsToFlip
+
+end
+
 #The functions below work with different file formatting#
 #########################################################
 
@@ -320,3 +347,4 @@ function load_T_history(fileName::String, T::UInt8)
 	return replicaList
 
 end
+
