@@ -57,9 +57,12 @@ for i in (1:10)
 
 	println("T= ", i)
 	PT = load_and_calc_expectation("unit-test1.jld2", Float64(i))[2]
+	Exact = magnetization_expec_value(h1, i)
 	@assert PT != 0
-	difference = magnetization_expec_value(h1, i) - PT
+	difference = Exact - PT
 	
+	println("PT = ",PT)
+	println("Ex = ", Exact)
 	println(difference)
 
 end
@@ -71,9 +74,12 @@ for i in (1:10)
 
 	println("T= ", i)
 	PT = load_and_calc_expectation("unit-test2.jld2", Float64(i))[2]
+	Exact = magnetization_expec_value(h1, i)
 	@assert PT != 0
-	difference = magnetization_expec_value(h2, i) - PT
+	difference = Exact - PT
 	
+	println("PT = ",PT)
+	println("Ex = ", Exact)
 	println(difference)
 
 end

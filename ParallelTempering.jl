@@ -17,7 +17,7 @@ function main(h::Hamiltonian, fileName::String)
 
 	#Defining these is what Tameem suggested we research
 	temperatures::Vector{Float64} = Vector{Float64}(1:N)
-	jldsave(fileName, measurement="magnetization",temps=temperatures)
+	#jldsave(fileName, measurement="magnetization",temps=temperatures)
 
 	#Generate Replicas
 	for i = (1:N)
@@ -33,7 +33,7 @@ function main(h::Hamiltonian, fileName::String)
 	toggle::UInt8 = 0
 
 	j = 1
-	while j <= 10000
+	while j <= 1000
 
 		toggle = toggle ⊻ 1
 
@@ -47,7 +47,8 @@ function main(h::Hamiltonian, fileName::String)
 			indices = (1 + toggle : 2 : N - toggle)
 		end
 
-		save_measurements(fileName, replica_list, j, magnetization)
+		#save_measurements(fileName, replica_list, j, magnetization)
+		save_all_history(fileName, replica_list, j)
 
 		for replica in replica_list
 			evolve!(replica, h)
@@ -67,4 +68,13 @@ function main(h::Hamiltonian, fileName::String)
 	end
 
 
+end
+
+
+J = ones(Float64, (4,4))
+h2 = Hamiltonian(2, J)
+
+for i in (3:10)
+	println(i)
+	main(h2, "all_historyh2_"* string(i) * ".jld2")
 end

@@ -1,6 +1,8 @@
 using JLD2
 using DataStructures
 using Random
+using Plots
+
 #spin -1 -> 0
 #spin 1 -> 1
 
@@ -265,9 +267,9 @@ end
 #########################################################
 
 
-function save_all_history(filename::String, replicas::Vector{Replica}, t::Int64)
+function save_all_history(fileName::String, replicas::Vector{Replica}, t::Int64)
 
-	jldopen(filename, "a+") do file
+	jldopen(fileName, "a+") do file
 		
 		i = 1
 		groupString = "t" * string(t) * "/" * "replica" 
@@ -284,6 +286,43 @@ function save_all_history(filename::String, replicas::Vector{Replica}, t::Int64)
 	end
 end
 
+function autocorrelation(fileNames::Vector{String}, ID::UInt8)
+
+	numFiles = length(fileNames)
+	replicas::Vector{Vector{Replica}} = Vector{Vector{Replica}}(undef,length(fileNames))
+	timesteps::UInt64 = 0
+	stateLength::UInt64 = 0
+	average::Float64 = 0
+	sum::Float64 = 0
+	j::UInt8 = 1
+
+	for fileName in fileNames
+		replicas[j] = load_ID_history(fileName, ID)
+		j += 1
+	end
+
+	timesteps = length(replicas[1])
+	stateLength = length(replicas[1][1].state)
+	
+	q::Vector{Float64} = Vector{Float64}(undef, timesteps)
+
+
+	for t in (1:timesteps)
+		sum = 0
+		for i in (1:stateLength)
+			average = 0
+			for fileIndex in (1:numFiles)
+				average +=  (-1)^(replicas[fileIndex][1].state[i] ⊻ replicas[fileIndex][t].state[i])
+			end
+			average = average/numFiles
+			sum += average
+		end
+		q[t] = sum/ stateLength
+
+	end
+
+	return q	
+end
 
 #This function tracks a replica through its evolution in temperature space
 #It returns the replica structure at every timestep
@@ -347,4 +386,5 @@ function load_T_history(fileName::String, T::UInt8)
 	return replicaList
 
 end
+
 
