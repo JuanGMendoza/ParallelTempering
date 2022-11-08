@@ -49,8 +49,8 @@ function run_tests()
 	println("\n")
 	for i in (1:10)
 
-		main(h1, "unit-test1_" * string(i) * ".jld2")
-		main(h2, "unit-test2_" * string(i) * ".jld2")
+		#main(h1, "unit-test1_" * string(i) * ".jld2")
+		#main(h2, "unit-test2_" * string(i) * ".jld2")
 
 		
 		print("Running simulations...[" *string(i) *"0%]\r")
@@ -77,7 +77,7 @@ function run_tests()
 		difference = Exact - PT
 		
 
-		if difference > 3*sigma
+		if difference > sigma
 			print("FAILED ")		
 		else
 			print("PASSED ")
@@ -86,7 +86,7 @@ function run_tests()
 		numTests += 1
 
 		print("| T= ", i)
-		print(" | Ex = ", Exact, " | PT = ",PT, " +- ", sigma, "\n\n")
+		print(" | Ex = ", Exact, " | PT = ",PT, " ± ", sigma, "\n\n")
 
 
 	end
@@ -108,7 +108,7 @@ function run_tests()
 		
 		
 
-		if difference > 3*sigma
+		if difference > sigma
 			print("FAILED ")		
 		else
 			print("PASSED ")
@@ -117,7 +117,7 @@ function run_tests()
 		numTests += 1
 
 		print("| T= ", i)
-		print(" | Ex = ", Exact, " | PT = ",PT, " +- ", sigma, "\n\n")
+		print(" | Ex = ", Exact, " | PT = ",PT, " ± ", sigma, "\n\n")
 
 	
 	end

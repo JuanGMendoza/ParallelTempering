@@ -1,7 +1,7 @@
 using JLD2
 using DataStructures
 using Random
-using Plots
+
 
 #spin -1 -> 0
 #spin 1 -> 1
@@ -297,11 +297,13 @@ function autocorrelation(fileNames::Vector{String}, ID::UInt8)
 	j::UInt8 = 1
 
 	for fileName in fileNames
+		#println(fileName)
 		replicas[j] = load_ID_history(fileName, ID)
 		j += 1
 	end
 
 	timesteps = length(replicas[1])
+	println("t",timesteps)
 	stateLength = length(replicas[1][1].state)
 	
 	q::Vector{Float64} = Vector{Float64}(undef, timesteps)
@@ -334,7 +336,9 @@ function load_ID_history(fileName::String, ID::UInt8)
 
 	replicaList::Vector{Replica} = []
 
+
 	jldopen(fileName) do file
+		#println("h ", length(keys(file)))
 		timesteps = length(keys(file))
 		replicaList = Vector{Replica}(undef, timesteps)
 		replicasPerTimestep = parse(UInt8, last(keys(file["t1"]))[replicaLength:end])
