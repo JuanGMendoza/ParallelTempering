@@ -1,7 +1,6 @@
 include("tools.jl")
 include("ParallelTempering.jl")
-
-using Plots
+using Statistics
 
 k_B = 1#1.380649 * 10^-23
 
@@ -41,45 +40,88 @@ function magnetization_expec_value(h, T)
 
 end
 
-h1 = Hamiltonian(1, zeros(4,4))
 
-main(h1, "unit-test1.jld2")
+function run_tests()
 
-J = ones(Float64, (4,4))
-h2 = Hamiltonian(2, J)
+	h1 = Hamiltonian(1, zeros(4,4))
+	J = ones(Float64, (4,4))
+	h2 = Hamiltonian(2, J)
+	println("\n")
+	for i in (1:10)
 
-println("50% Complete")
-main(h2, "unit-test2.jld2")
+		main(h1, "unit-test1_" * string(i) * ".jld2")
+		main(h2, "unit-test2_" * string(i) * ".jld2")
 
-println("H1 Test:")
-
-for i in (1:10)
-
-	println("T= ", i)
-	PT = load_and_calc_expectation("unit-test1.jld2", Float64(i))[2]
-	Exact = magnetization_expec_value(h1, i)
-	@assert PT != 0
-	difference = Exact - PT
+		
+		print("Running simulations...[" *string(i) *"0%]\r")
+		
+	end
 	
-	println("PT = ",PT)
-	println("Ex = ", Exact)
-	println(difference)
 
+
+
+	numTests = 0
+	passedTests = 0
+
+	println("\nH1 Test:\n")
+
+	for i in (1:10)
+
+		samples::Vector{Float64} = Vector{Float64}(undef, 10)
+		for sample in (1:10)
+			samples[sample] = load_and_calc_expectation("unit-test1_" * string(sample) * ".jld2", Float64(i))[2]
+		end
+		PT = mean(samples)
+		sigma = std(samples)
+		Exact = magnetization_expec_value(h1, i)
+		difference = Exact - PT
+		
+
+		if difference > 3*sigma
+			print("FAILED ")		
+		else
+			print("PASSED ")
+			passedTests += 1
+		end
+		numTests += 1
+
+		print("| T= ", i)
+		print(" | Ex = ", Exact, " | PT = ",PT, " +- ", sigma, "\n\n")
+
+
+	end
+
+
+	println("\nH2 Test:\n")
+	for i in (1:10)
+
+		samples::Vector{Float64} = Vector{Float64}(undef, 10)
+		for sample in (1:10)
+			samples[sample] = load_and_calc_expectation("unit-test2_" * string(sample) * ".jld2", Float64(i))[2]
+		end
+		
+		PT = mean(samples)
+		sigma = std(samples)
+		Exact = magnetization_expec_value(h2, i)
+		difference = abs(Exact - PT)
+
+		
+		
+
+		if difference > 3*sigma
+			print("FAILED ")		
+		else
+			print("PASSED ")
+			passedTests += 1
+		end
+		numTests += 1
+
+		print("| T= ", i)
+		print(" | Ex = ", Exact, " | PT = ",PT, " +- ", sigma, "\n\n")
+
+	
+	end
+	println(passedTests, "/", numTests, " tests passed")
 end
 
-
-println("H2 Test:")
-for i in (1:10)
-
-
-	println("T= ", i)
-	PT = load_and_calc_expectation("unit-test2.jld2", Float64(i))[2]
-	Exact = magnetization_expec_value(h1, i)
-	@assert PT != 0
-	difference = Exact - PT
-	
-	println("PT = ",PT)
-	println("Ex = ", Exact)
-	println(difference)
-
-end
+run_tests()
