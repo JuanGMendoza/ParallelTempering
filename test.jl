@@ -43,6 +43,9 @@ end
 
 function run_tests()
 
+	numTests = 0
+	passedTests = 0
+	#=
 	h1 = Hamiltonian(1, zeros(4,4))
 	J = ones(Float64, (4,4))
 	h2 = Hamiltonian(2, J)
@@ -60,8 +63,7 @@ function run_tests()
 
 
 
-	numTests = 0
-	passedTests = 0
+
 
 	println("\nH1 Test:\n")
 
@@ -121,7 +123,55 @@ function run_tests()
 
 	
 	end
+	=#
+
+	println("energy_difference() tests: \n")
+	
+	passed, feedback = test21()
+
+	if passed
+		print("PASSED")
+		passedTests += 1
+	end
+	
+	#hami = Hamiltonian(Float64(2), [[[UInt64(2),UInt64(3)]], [[UInt64(1),UInt64(3)]], [[UInt64(1),UInt64(2)]]], [[2.0],[2.0],[2.0]])
+
 	println(passedTests, "/", numTests, " tests passed")
 end
 
-run_tests()
+#Individual Function Tests tools.jl
+
+#function energy_difference(ID::UInt8, different_spin::UInt8, state_matrix::Vector{UInt128}, hamiltonian::Hamiltonian)
+
+
+#2 body interaction test
+function test21()
+
+	passed = false
+	hami = Hamiltonian(0, [ [[UInt64(2)]], [[UInt64(1)]], [[]]], [[2.0],[2.0], []])
+	replicas = 2
+	spins = 3
+	state_matrix::Vector{UInt128} = Vector{UInt128}(undef, 3)
+
+	state_matrix[1] = UInt128(2)
+	state_matrix[2] = UInt128(3)
+	state_matrix[3] = UInt128(2)
+
+	different_spin = UInt64(1)
+
+	output = energy_difference(UInt8(2), different_spin, state_matrix, hami)
+	correct = -4.0
+
+	if output == correct
+
+		#print("PASSED")
+		passed = true
+		#passedTests += 1
+	end
+
+	#numTests += 1
+
+	return passed, " | input 111 | bond 1,2 (2.0) | flip 1 | output " * string(output) * " | should be -4.0" 
+end
+
+#run_tests()

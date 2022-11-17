@@ -1,7 +1,7 @@
 using JLD2
 using DataStructures
 using Random
-
+using Bits
 
 #spin -1 -> 0
 #spin 1 -> 1
@@ -13,8 +13,14 @@ mutable struct Hamiltonian
 	#Local Field
 	h::Float64
 
-	#Interaction Terms
-	J::Array{Float64}
+	#Interaction Terms where the first index represents the the spin that the bonds correspond to
+	#the second index represents the bond number, and the third index iterates through all the
+	#spins that the bond involves
+	bonds::Vector{Vector{Vector{UInt64}}}
+
+	#Contains the bond strength of the bonds defined by the structure above
+	#strength of bond bonds[i][k] is strength_bonds[i][k]
+	strength_bonds::Vector{Vector{Float64}}
 
 end
 
@@ -26,25 +32,60 @@ mutable struct Replica
 	#Inverse Temperature
 	B::Float64
 
-	state::Vector{UInt8}
-
 	#Number to identify the replica as it moves through B space
 	ID::UInt8
 
 	bitsToFlip::Queue{UInt64}
 
+end
+
+
+
+function energy_difference(ID::UInt8, different_spin::UInt64, state_matrix::Vector{UInt128}, hamiltonian::Hamiltonian)
+
+	sign = bits(state_matrix[different_spin])[ID]
+	bonds = hamiltonian.bonds[different_spin]
+	strengths = hamiltonian.strength_bonds
+	energy_diff_interactions = 0
+	energy_diff_field = hamiltonian.h * (-1)^bits(state_matrix[different_spin])[ID]
+
+	if length(bonds[1]) != 0
+
+		sign = bits(state_matrix[different_spin])[ID]
+
+		i = 1
+		for bond in bonds
+
+			for spin in bond
+				sign = !bits(state_matrix[spin])[ID] ⊻ sign
+
+			end
+			if sign == false
+				energy_diff_interactions += strengths[different_spin][i] 
+			else 
+				energy_diff_interactions += -strengths[different_spin][i] 
+			end
+			i += 1
+		end
+
+
+	end
+
+	return 2*(energy_diff_interactions + energy_diff_field)
 
 end
 
 
+
+
 #Markov chain evolution
-function evolve!(replica::Replica ,h::Hamiltonian)
+function evolve!(replica::Replica ,h::Hamiltonian, state_matrix::Vector{UInt128})
 
 	
 	if isempty(replica.bitsToFlip)
 		refill_random_bits!(replica, length(h.J[1,:]))
 	end
-	random_bit::UInt8 = dequeue!(replica.bitsToFlip)
+	random_bit::BigInt = dequeue!(replica.bitsToFlip)
 	new_state = copy(replica.state)
 	new_state[random_bit] = new_state[random_bit] ⊻ 1
 	

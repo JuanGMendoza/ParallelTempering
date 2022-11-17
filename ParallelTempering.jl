@@ -1,20 +1,21 @@
 using Random
-
+using Bits
 include("tools.jl")
 
 
 function main(h::Hamiltonian, fileName::String)
 
+
 	
 	#Number of replicas
 	N::UInt8 = 10
 	#Size of the states
-	size::UInt8 = length(h.J[1,:])
+	size::UInt8 = length(h.bonds)
 
 	replica_list::Vector{Replica} = Vector{Replica}(undef, N)
 
-	state::Vector{UInt8} = Vector{UInt8}(undef, size)
-
+	state_matrix::Vector{UInt128} = Vector{UInt128}(undef, size)
+	row::UInt128 = 0
 	#Defining these is what Tameem suggested we research
 	temperatures::Vector{Float64} = Vector{Float64}(1:N)
 	jldsave(fileName, measurement="magnetization",temps=temperatures)
@@ -22,8 +23,9 @@ function main(h::Hamiltonian, fileName::String)
 	#Generate Replicas
 	for i = (1:N)
 
-		state = rand([0,1], size)
-		replica_list[i] = Replica(temperatures[i], temperatures[i].^-1, state, i, Queue{UInt64}())
+		row = rand(0:(UInt128(2)^replicas)-1)
+		state_matrix[i] = row
+		replica_list[i] = Replica(temperatures[i], temperatures[i].^-1, i, Queue{UInt64}())
 		refill_random_bits!(replica_list[i], size)
 
 	end
@@ -70,12 +72,5 @@ function main(h::Hamiltonian, fileName::String)
 
 end
 
-#=
-J = ones(Float64, (4,4))
-h2 = Hamiltonian(2, J)
 
-for i in (3:10)
-	println(i)
-	main(h2, "all_historyh2_"* string(i) * ".jld2")
-end
-=#
+
