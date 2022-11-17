@@ -3,8 +3,8 @@ using DataStructures
 using Random
 using Bits
 
-#spin -1 -> 0
-#spin 1 -> 1
+#spin -1 -> 1
+#spin 1 -> 0
 
 
 #H = h * spins + Ji,j * spin_i * spin_j
@@ -43,21 +43,23 @@ end
 
 function energy_difference(ID::UInt8, different_spin::UInt64, state_matrix::Vector{UInt128}, hamiltonian::Hamiltonian)
 
-	sign = bits(state_matrix[different_spin])[ID]
+	
+	sign = !(bits(state_matrix[different_spin])[ID])
 	bonds = hamiltonian.bonds[different_spin]
 	strengths = hamiltonian.strength_bonds
 	energy_diff_interactions = 0
-	energy_diff_field = hamiltonian.h * (-1)^bits(state_matrix[different_spin])[ID]
+	energy_diff_field = hamiltonian.h * (-1)^!(bits(state_matrix[different_spin])[ID])
+
 
 	if length(bonds[1]) != 0
 
-		sign = bits(state_matrix[different_spin])[ID]
+		sign = !(bits(state_matrix[different_spin])[ID])
 
 		i = 1
 		for bond in bonds
 
 			for spin in bond
-				sign = !bits(state_matrix[spin])[ID] ⊻ sign
+				sign = bits(state_matrix[spin])[ID] ⊻ sign
 
 			end
 			if sign == false

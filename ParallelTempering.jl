@@ -3,7 +3,7 @@ using Bits
 include("tools.jl")
 
 
-function main(h::Hamiltonian, fileName::String)
+function parallel_tempering(h::Hamiltonian, fileName::String)
 
 
 	
