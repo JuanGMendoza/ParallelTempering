@@ -1,10 +1,7 @@
+using Bits
 
-mym = [0.0, 1.0, 2.0]
+for bit in bits(UInt8(1))
 
-function del(matrix)
-	matrix[1] = 5.0
+	println(bit)
+
 end
-
-del(mym)
-
-println(mym)

@@ -110,8 +110,12 @@ function evolve!(replica::Replica ,hami::Hamiltonian, state_matrix::Vector{UInt1
 
 end
 
-function propose_exchange(replica1::Replica, replica2::Replica, h::Hamiltonian)
+function propose_exchange(replica1::Replica, replica2::Replica, h::Hamiltonian, state_matrix::Vector{UInt128})
 
+	for spin in (1:length(h.bonds))
+		println(bits(state_matrix[spin])[replica2.ID])
+	end
+	readline()
 	delta::Float64 = -(replica1.B - replica2.B)*(evaluate_energy(replica1.state, h) - evaluate_energy(replica2.state, h))
 
 	#println(delta)
@@ -133,6 +137,23 @@ function propose_exchange(replica1::Replica, replica2::Replica, h::Hamiltonian)
 
 end
 
+q = Queue{UInt64}()
+
+enqueue!(q, 1)
+enqueue!(q, 2)
+enqueue!(q, 3)
+
+rep1 = Replica(1,1, 1, q)
+rep2 = Replica(1,1, 2, q)
+
+state_matrix::Vector{UInt128} = Vector{UInt128}(undef, 3)
+
+state_matrix[1] = UInt8(2)
+state_matrix[2] = UInt8(2)
+state_matrix[3] = UInt8(2)
+hami = Hamiltonian(15.5, [ [[]], [[]], [[]]], [[],[], []])
+
+propose_exchange(rep1, rep2, hami, state_matrix)
 #exchanges the replicas (but not their temperature), replica_list[index] <-> replica_list[index + 1]
 function exchange!(replicaList::Vector{Replica}, index::UInt8)
 
