@@ -81,69 +81,34 @@ end
 
 
 #Markov chain evolution
-function evolve!(replica::Replica ,h::Hamiltonian, state_matrix::Vector{UInt128})
+function evolve!(replica::Replica ,hami::Hamiltonian, state_matrix::Vector{UInt128})
 
 	
 	if isempty(replica.bitsToFlip)
-		refill_random_bits!(replica, length(h.J[1,:]))
+		refill_random_bits!(replica, length(hami.bonds))
 	end
-	random_bit::BigInt = dequeue!(replica.bitsToFlip)
-	new_state = copy(replica.state)
-	new_state[random_bit] = new_state[random_bit] ⊻ 1
+	random_bit::UInt64 = dequeue!(replica.bitsToFlip)
 	
-	#VERIFY this algorithm is correct
-	criterion = exp(replica.B*(evaluate_energy(replica.state, h) - evaluate_energy(new_state, h)))
+	criterion = exp(replica.B*(-energy_difference(replica.ID, random_bit, state_matrix, hami)))
 
+	println(energy_difference(replica.ID, random_bit, state_matrix, hami))
 	if criterion < 1
+
+		println(criterion)
 
 	 	if rand() < criterion
 
-	 		replica.state[random_bit] = replica.state[random_bit] ⊻ 1
+	 		state_matrix[random_bit] = state_matrix[random_bit] ⊻ 2^(replica.ID-1)
 	 		
 	 	end
 	
 	else
-		replica.state[random_bit] = replica.state[random_bit] ⊻ 1
+		state_matrix[random_bit] = state_matrix[random_bit] ⊻ 2^(replica.ID-1)
 		
 	end
 
-	
-end
-
-function flip_random_bit(state::Vector{UInt8})
-
-	state_copy::Vector{UInt8} = copy(state)
-
-	flip::UInt8 = rand(1:length(state))
-
-	state_copy[flip] = state_copy[flip] ⊻ 1
-
-	return state_copy
 
 end
-
-#Returns the energy corresponding to the input state
-function evaluate_energy(state::Vector{UInt8}, h::Hamiltonian)
-
-	E::Float64 = 0
-
-	for spin in state
-
-			E = E - (-1)^Int8(spin)*h.h
-
-	end
-
-	for i in (1:length(state)-1)
-
-		for j in (i+1:length(state))
-
-			E = E + h.J[i,j]*(-1)^(state[i] ⊻ state[j])
-
-		end
-	end
-	return E
-end
-
 
 function propose_exchange(replica1::Replica, replica2::Replica, h::Hamiltonian)
 
@@ -434,4 +399,41 @@ function load_T_history(fileName::String, T::UInt8)
 
 end
 
+
+#################Deprecated#######################
+function flip_random_bit(state::Vector{UInt8})
+
+	state_copy::Vector{UInt8} = copy(state)
+
+	flip::UInt8 = rand(1:length(state))
+
+	state_copy[flip] = state_copy[flip] ⊻ 1
+
+	return state_copy
+
+end
+
+
+#########################Deprecated################################
+#Returns the energy corresponding to the input state
+function evaluate_energy(state::Vector{UInt8}, h::Hamiltonian)
+
+	E::Float64 = 0
+
+	for spin in state
+
+			E = E - (-1)^Int8(spin)*h.h
+
+	end
+
+	for i in (1:length(state)-1)
+
+		for j in (i+1:length(state))
+
+			E = E + h.J[i,j]*(-1)^(state[i] ⊻ state[j])
+
+		end
+	end
+	return E
+end
 

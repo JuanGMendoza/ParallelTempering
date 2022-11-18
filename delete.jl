@@ -1,9 +1,10 @@
-using Bits
 
-size = 4
+mym = [0.0, 1.0, 2.0]
 
-state_matrix::Vector{UInt128} = Vector{UInt128}(undef, size)
+function del(matrix)
+	matrix[1] = 5.0
+end
 
-state_matrix[1] = 2
+del(mym)
 
-println(length(bits(state_matrix[1])))
+println(mym)
