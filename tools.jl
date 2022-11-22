@@ -246,8 +246,14 @@ function calculate_expectation(operator::Function, replicas::Vector{Replica})
 
 	average::Float64 = 0
 
+
 	for replica in replicas
-		average += operator(replica.state)
+
+		state::Vector{UInt8} = Vector{UInt8}(undef, length(state_matrix))
+		for spin in (1:length(state_matrix))
+			state[spin] = UInt8(bits(state_matrix[spin])[replica.ID])
+		end
+		average += operator(state)
 	end
 	return average/length(replicas)
 
@@ -449,5 +455,3 @@ function evaluate_energy(state::Vector{UInt8}, h::Hamiltonian)
 	end
 	return E
 end
-
-
