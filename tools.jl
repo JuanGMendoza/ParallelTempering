@@ -156,7 +156,6 @@ function exchange!(replicaList::Vector{Replica}, index::UInt8)
 
 end
 
-
 function brute_force_ground_state(h::Hamiltonian)
 
 	temp::Float64 = 0
@@ -177,7 +176,7 @@ end
 #Creates a file containing measurements for input operator for every temperature
 #Receives a replica list whose order matches the temperature list
 # t represents the timestep of the simulation
-function save_measurements(fileName::String, replicas::Vector{Replica}, t::Int64, operator::Function)
+function save_measurements(fileName::String, replicas::Vector{Replica}, t::Int64, operator::Function, state_matrix::Vector{UInt128})
 
 	groupString = "t" * string(t) * "/" 
 
@@ -186,12 +185,19 @@ function save_measurements(fileName::String, replicas::Vector{Replica}, t::Int64
 		i::UInt8 = 1
 		for replica in replicas
 
-			
-			file[groupString * string(i) * "/measurement"] = operator(replica.state)
+			state::Vector{UInt8} = Vector{UInt8}(undef, length(state_matrix))
+			for spin in (1:length(state_matrix))
+				state[spin] = UInt8(bits(state_matrix[spin])[replica.ID])
+			end
+
+			file[groupString * string(i) * "/measurement"] = operator(state)
+			println("measurement ", operator(state))
 			i = i + 1
 		end
 	end
 end
+
+
 
 #returns the expectation value of all measurements stored in fileName at temperature T
 function load_and_calc_expectation(fileName::String, T::Float64)
@@ -443,4 +449,5 @@ function evaluate_energy(state::Vector{UInt8}, h::Hamiltonian)
 	end
 	return E
 end
+
 
