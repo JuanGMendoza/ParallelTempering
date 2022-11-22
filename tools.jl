@@ -144,14 +144,14 @@ end
 function exchange!(replicaList::Vector{Replica}, index::UInt8)
 
 	#Discuss efficiency of this
-	temp_state::Vector{UInt8} = replicaList[index].state
+	temp_bitsToFlip::Queue{UInt64} = replicaList[index].bitsToFlip
 	temp_ID::UInt8 = replicaList[index].ID
 
 	replicaList[index].ID = replicaList[index + 1].ID
-	replicaList[index].state = replicaList[index + 1].state
+	replicaList[index].bitsToFlip = replicaList[index + 1].bitsToFlip
 
 	replicaList[index + 1].ID = temp_ID
-	replicaList[index + 1].state = temp_state
+	replicaList[index + 1].bitsToFlip = temp_bitsToFlip
 
 
 end
