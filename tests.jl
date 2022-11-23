@@ -60,7 +60,9 @@ function test1(temperature=1, correct=-3.0463766238230594, hamiltonian="1")
 
 	PT = mean(samples)
 	sigma = std(samples)
-	difference = correct - PT
+	difference = abs(correct - PT)
+
+	
 	
 	if difference < sigma
 		outcome = true		

@@ -35,7 +35,11 @@ mutable struct Replica
 	#Number to identify the replica as it moves through B space
 	ID::UInt8
 
+	#list of bits to be flipped during markov evolution
 	bitsToFlip::Queue{UInt64}
+
+	#energy of the current state of the replica
+	curEnergy::Float64
 
 end
 
@@ -60,7 +64,6 @@ function energy_difference(ID::UInt8, different_spin::UInt64, state_matrix::Vect
 
 			for spin in bond
 				sign = bits(state_matrix[spin])[ID] ⊻ sign
-
 			end
 			if sign == false
 				energy_diff_interactions += strengths[different_spin][i] 
@@ -77,6 +80,43 @@ function energy_difference(ID::UInt8, different_spin::UInt64, state_matrix::Vect
 
 end
 
+#Returns the energy corresponding to the input state in state_matrix corresponding to replica ID
+function evaluate_energy(ID::UInt8, h::Hamiltonian, state_matrix::Vector{UInt128})
+
+	E::Float64 = 0
+
+	includeBond::Bool = true
+	for spin in (1:length(h.bonds))
+		E += h.h * (-1)^bits(state_matrix[spin])[ID]
+
+		bondIndex = 1
+
+
+		for bond in h.bonds[spin]
+			
+			if length(bond) != 0
+				bondSign = bits(state_matrix[spin])[ID]
+				includeBond = true
+				for bondSpin in bond
+					if spin > bondSpin
+						includeBond = false
+					
+					else
+						
+						bondSign = bondSign ⊻ bits(state_matrix[bondSpin])[ID]
+					end
+				end
+				
+				if includeBond == true
+					
+					E += h.strength_bonds[spin][bondIndex] * ((-1)^(bondSign))
+				end
+			end
+			bondIndex += 1
+		end
+	end
+	return E 
+end
 
 
 
@@ -91,37 +131,27 @@ function evolve!(replica::Replica ,hami::Hamiltonian, state_matrix::Vector{UInt1
 	
 	criterion = exp(replica.B*(-energy_difference(replica.ID, random_bit, state_matrix, hami)))
 
-	println(energy_difference(replica.ID, random_bit, state_matrix, hami))
 	if criterion < 1
-
-		println(criterion)
 
 	 	if rand() < criterion
 
+	 		replica.curEnergy = replica.curEnergy + energy_difference(replica.ID, random_bit, state_matrix, hami)
 	 		state_matrix[random_bit] = state_matrix[random_bit] ⊻ 2^(replica.ID-1)
-	 		
+	 
 	 	end
 	
 	else
+		replica.curEnergy = replica.curEnergy + energy_difference(replica.ID, random_bit, state_matrix, hami)
 		state_matrix[random_bit] = state_matrix[random_bit] ⊻ 2^(replica.ID-1)
 		
 	end
-
 
 end
 
 function propose_exchange(replica1::Replica, replica2::Replica, h::Hamiltonian, state_matrix::Vector{UInt128})
 
-	totalEnergyDiff::Float64 = 0
-	for spin in (1:length(h.bonds))
+	delta::Float64 = -(replica1.B - replica2.B)*(replica1.curEnergy - replica2.curEnergy)
 
-		if bits(state_matrix[spin])[replica2.ID] != bits(state_matrix[spin])[replica1.ID]
-			totalEnergyDiff += energy_difference(replica2.ID, UInt64(spin), state_matrix, h)
-		end
-	end
-	delta::Float64 = -(replica1.B - replica2.B)*(totalEnergyDiff)
-
-	println(delta)
 	if delta < 0
 
 		return true
@@ -140,18 +170,42 @@ function propose_exchange(replica1::Replica, replica2::Replica, h::Hamiltonian, 
 
 end
 
+#=
+bitsToFlip = Queue{UInt64}()
+enqueue!(bitsToFlip, 1)
+enqueue!(bitsToFlip, 2)
+
+
+rep1 = Replica(1,1,1, bitsToFlip)
+rep2 = Replica(2, .5, 2, bitsToFlip)
+
+state_matrix = Vector{UInt128}(undef, 2)
+
+state_matrix[1] = UInt128(2)
+state_matrix[2] = UInt128(2)
+
+println(bits(state_matrix[1]))
+println(bits(state_matrix[2]))
+
+hami = Hamiltonian(0, [[[2]],[[1]]], [[1], [1]])
+
+propose_exchange(rep1, rep2, hami, state_matrix)
+=#
 #exchanges the replicas (but not their temperature), replica_list[index] <-> replica_list[index + 1]
 function exchange!(replicaList::Vector{Replica}, index::UInt8)
 
 	#Discuss efficiency of this
 	temp_bitsToFlip::Queue{UInt64} = replicaList[index].bitsToFlip
 	temp_ID::UInt8 = replicaList[index].ID
+	temp_energy::Float64 = replicaList[index].curEnergy 
 
 	replicaList[index].ID = replicaList[index + 1].ID
 	replicaList[index].bitsToFlip = replicaList[index + 1].bitsToFlip
+	replicaList[index].curEnergy = replicaList[index + 1].curEnergy
 
 	replicaList[index + 1].ID = temp_ID
 	replicaList[index + 1].bitsToFlip = temp_bitsToFlip
+	replicaList[index + 1].curEnergy = temp_energy
 
 
 end
@@ -191,7 +245,6 @@ function save_measurements(fileName::String, replicas::Vector{Replica}, t::Int64
 			end
 
 			file[groupString * string(i) * "/measurement"] = operator(state)
-			println("measurement ", operator(state))
 			i = i + 1
 		end
 	end
@@ -264,7 +317,7 @@ function magnetization(state::Vector{UInt8})
 	m = 0 
 	for spin in state
 
-		m += (-1)^(spin ⊻ 1)
+		m += (-1)^(spin)
 	end
 	return m
 end
@@ -313,6 +366,8 @@ function save_all_history(fileName::String, replicas::Vector{Replica}, t::Int64)
 	end
 end
 
+
+##TO BE UPDATED FOR NEW DATA STRUCTURES#
 function autocorrelation(fileNames::Vector{String}, ID::UInt8)
 
 	numFiles = length(fileNames)
@@ -433,25 +488,3 @@ function flip_random_bit(state::Vector{UInt8})
 end
 
 
-#########################Deprecated################################
-#Returns the energy corresponding to the input state
-function evaluate_energy(state::Vector{UInt8}, h::Hamiltonian)
-
-	E::Float64 = 0
-
-	for spin in state
-
-			E = E - (-1)^Int8(spin)*h.h
-
-	end
-
-	for i in (1:length(state)-1)
-
-		for j in (i+1:length(state))
-
-			E = E + h.J[i,j]*(-1)^(state[i] ⊻ state[j])
-
-		end
-	end
-	return E
-end

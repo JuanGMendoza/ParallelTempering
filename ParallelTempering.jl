@@ -21,13 +21,16 @@ function parallel_tempering(h::Hamiltonian, fileName::String)
 	jldsave(fileName, measurement="magnetization",temps=temperatures)
 
 	#Generate Replicas
-	for i = (1:N)
+	for i = (1:size)
 
-		row = rand(0:(UInt128(2)^replicas)-1)
+		row = rand(0:(UInt128(2)^N)-1)
 		state_matrix[i] = row
-		replica_list[i] = Replica(temperatures[i], temperatures[i].^-1, i, Queue{UInt64}())
-		refill_random_bits!(replica_list[i], size)
+	end
 
+	for k in (1:N)
+		energy = evaluate_energy(UInt8(k), h, state_matrix)
+		replica_list[k] = Replica(temperatures[k], temperatures[k].^-1, k, Queue{UInt64}(), energy)
+		refill_random_bits!(replica_list[k], size)
 	end
 
 	#This variable decides which pairs are considered for exchange
@@ -49,18 +52,19 @@ function parallel_tempering(h::Hamiltonian, fileName::String)
 			indices = (1 + toggle : 2 : N - toggle)
 		end
 
-		save_measurements(fileName, replica_list, j, magnetization)
+		save_measurements(fileName, replica_list, j, magnetization, state_matrix)
 		#save_all_history(fileName, replica_list, j)
 
 		for replica in replica_list
-			evolve!(replica, h)
+			evolve!(replica, h, state_matrix)
 		end
 
 		for i in indices
 
-			if propose_exchange(replica_list[i], replica_list[i+1], h)
+			if propose_exchange(replica_list[i], replica_list[i+1], h, state_matrix)
 
-				exchange!(replica_list, UInt8(i))
+				#exchange!(replica_list, UInt8(i))
+				true
 
 			end
 		end

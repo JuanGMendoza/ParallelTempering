@@ -15,9 +15,9 @@ end
 #Needs to be updated for new data structures
 function generate_required_files()
 
-		h1 = Hamiltonian(1, zeros(4,4))
-		J = ones(Float64, (4,4))
-		h2 = Hamiltonian(2, J)
+		h1 = Hamiltonian(2, [[[]],[[]],[[]],[[]]], [[],[], []])
+		bonds = [[[2], [3], [4]] ,[[1], [3], [4] ] ,[[1], [2], [4] ] ,[[1], [2], [3]]]
+		h2 = Hamiltonian(2, bonds, [[1, 1, 1], [1,1,1], [1,1,1], [1,1,1]])
 		println("\n")
 		for i in (1:10)
 
@@ -37,7 +37,7 @@ function run_tests()
 
 	functions = filter( x->getproperty(tests,x) isa Function && occursin("test", String(x)), names( tests, all = true ))
 	functions = sort(string.(functions), by=custom_cmp)
-	#generate_required_files()
+	generate_required_files()
 
 	for test in functions
 
