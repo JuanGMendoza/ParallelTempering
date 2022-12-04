@@ -118,6 +118,17 @@ function evaluate_energy(ID::UInt8, h::Hamiltonian, state_matrix::Vector{UInt128
 	return E 
 end
 
+function printState(replica::Replica, state_matrix::Vector{UInt128})
+
+	for spin in (1:length(state_matrix))
+
+		if bits(state_matrix[spin])[replica.ID]
+			print(1)
+		else
+			print(0)
+		end
+	end
+end
 
 
 #Markov chain evolution

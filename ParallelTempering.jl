@@ -56,19 +56,22 @@ function parallel_tempering(h::Hamiltonian, fileName::String)
 		#save_all_history(fileName, replica_list, j)
 
 		for replica in replica_list
+			printState(replica, state_matrix)
 			evolve!(replica, h, state_matrix)
+			printState()
 		end
 
+#=
 		for i in indices
 
 			if propose_exchange(replica_list[i], replica_list[i+1], h, state_matrix)
 
-				#exchange!(replica_list, UInt8(i))
+				exchange!(replica_list, UInt8(i))
 				true
 
 			end
 		end
-		
+		=#
 		j += 1
 		
 	end
