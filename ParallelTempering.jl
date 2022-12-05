@@ -56,9 +56,13 @@ function parallel_tempering(h::Hamiltonian, fileName::String)
 		#save_all_history(fileName, replica_list, j)
 
 		for replica in replica_list
-			printState(replica, state_matrix)
+
+			#println("T = ", replica.T, "\n")
+			#printState(replica, state_matrix)
 			evolve!(replica, h, state_matrix)
-			printState()
+			#print("\n")
+			#printState(replica, state_matrix)
+			#readline()
 		end
 
 #=

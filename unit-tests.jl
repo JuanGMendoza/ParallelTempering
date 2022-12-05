@@ -15,7 +15,7 @@ end
 #Needs to be updated for new data structures
 function generate_required_files()
 
-		h1 = Hamiltonian(2, [[[]],[[]],[[]],[[]]], [[],[], []])
+		h1 = Hamiltonian(1, [[[]],[[]],[[]],[[]]], [[],[], [], []])
 		bonds = [[[2], [3], [4]] ,[[1], [3], [4] ] ,[[1], [2], [4] ] ,[[1], [2], [3]]]
 		h2 = Hamiltonian(2, bonds, [[1, 1, 1], [1,1,1], [1,1,1], [1,1,1]])
 		println("\n")

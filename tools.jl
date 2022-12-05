@@ -157,6 +157,7 @@ function evolve!(replica::Replica ,hami::Hamiltonian, state_matrix::Vector{UInt1
 		
 	end
 
+
 end
 
 function propose_exchange(replica1::Replica, replica2::Replica, h::Hamiltonian, state_matrix::Vector{UInt128})
