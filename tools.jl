@@ -48,11 +48,11 @@ end
 function energy_difference(ID::UInt8, different_spin::UInt64, state_matrix::Vector{UInt128}, hamiltonian::Hamiltonian)
 
 	
-	sign = !(bits(state_matrix[different_spin])[ID])
-	bonds = hamiltonian.bonds[different_spin]
-	strengths = hamiltonian.strength_bonds
-	energy_diff_interactions = 0
-	energy_diff_field = hamiltonian.h * (-1)^!(bits(state_matrix[different_spin])[ID])
+	sign::UInt8 = !(bits(state_matrix[different_spin])[ID])
+	bonds::Vector{Vector{UInt64}} = hamiltonian.bonds[different_spin]
+	strengths::Vector{Vector{Float64}} = hamiltonian.strength_bonds
+	energy_diff_interactions::Float64 = 0
+	energy_diff_field::Float64 = hamiltonian.h * (-1)^!(bits(state_matrix[different_spin])[ID])
 
 	
 	if length(bonds[1]) != 0
@@ -90,6 +90,9 @@ function evaluate_energy(ID::UInt8, h::Hamiltonian, state_matrix::Vector{UInt128
 	E::Float64 = 0
 
 	includeBond::Bool = true
+	bondIndex::UInt16 = 0
+	bondSign::Bool = false
+
 	for spin in (1:length(h.bonds))
 		E += h.h * (-1)^bits(state_matrix[spin])[ID]
 
@@ -138,11 +141,14 @@ end
 #Markov chain evolution
 function evolve!(replica::Replica ,hami::Hamiltonian, state_matrix::Vector{UInt128})
 
-	
+	random_bit::UInt64 = 0
+	criterion::Float64 = 0
+
 	if isempty(replica.bitsToFlip)
 		refill_random_bits!(replica, length(hami.bonds))
 	end
-	random_bit::UInt64 = dequeue!(replica.bitsToFlip)
+
+	random_bit = dequeue!(replica.bitsToFlip)
 	
 	criterion = exp(replica.B*(-energy_difference(replica.ID, random_bit, state_matrix, hami)))
 
@@ -186,27 +192,7 @@ function propose_exchange(replica1::Replica, replica2::Replica, h::Hamiltonian, 
 
 end
 
-#=
-bitsToFlip = Queue{UInt64}()
-enqueue!(bitsToFlip, 1)
-enqueue!(bitsToFlip, 2)
 
-
-rep1 = Replica(1,1,1, bitsToFlip)
-rep2 = Replica(2, .5, 2, bitsToFlip)
-
-state_matrix = Vector{UInt128}(undef, 2)
-
-state_matrix[1] = UInt128(2)
-state_matrix[2] = UInt128(2)
-
-println(bits(state_matrix[1]))
-println(bits(state_matrix[2]))
-
-hami = Hamiltonian(0, [[[2]],[[1]]], [[1], [1]])
-
-propose_exchange(rep1, rep2, hami, state_matrix)
-=#
 #exchanges the replicas (but not their temperature), replica_list[index] <-> replica_list[index + 1]
 function exchange!(replicaList::Vector{Replica}, index::UInt8)
 
@@ -226,29 +212,13 @@ function exchange!(replicaList::Vector{Replica}, index::UInt8)
 
 end
 
-function brute_force_ground_state(h::Hamiltonian)
-
-	temp::Float64 = 0
-	min::Float64 = typemax(Float64)
-	minState::UInt8 = 0
-
-	for i in (0:2^7)
-		temp = evaluate_energy(UInt8(i), h)
-		if temp < min
-			min = temp
-			minState = i
-		end
-	end
-	return min, minState
-end
-
 
 #Creates a file containing measurements for input operator for every temperature
 #Receives a replica list whose order matches the temperature list
 # t represents the timestep of the simulation
 function save_measurements(fileName::String, replicas::Vector{Replica}, t::Int64, operator::Function, state_matrix::Vector{UInt128})
 
-	groupString = "t" * string(t) * "/" 
+	groupString::String = "t" * string(t) * "/" 
 
 	jldopen(fileName, "a+") do file
 

@@ -19,15 +19,19 @@ function generate_required_files()
 		bonds = [[[2], [3], [4]] ,[[1], [3], [4] ] ,[[1], [2], [4] ] ,[[1], [2], [3]]]
 		h2 = Hamiltonian(2, bonds, [[1, 1, 1], [1,1,1], [1,1,1], [1,1,1]])
 		println("\n")
-		for i in (1:10)
+		t = @elapsed begin
+			for i in (1:10)
 
-			parallel_tempering(h1, "unit-test1_" * string(i) * ".jld2")
-			parallel_tempering(h2, "unit-test2_" * string(i) * ".jld2")
-
-			
-			print("Running simulations...[" *string(i) *"0%]\r")
-			
+				
+				parallel_tempering(h1, "unit-test1_" * string(i) * ".jld2")
+				parallel_tempering(h2, "unit-test2_" * string(i) * ".jld2")
+				print("Running simulations...[" *string(i) *"0%]\r")
+				
+			end
 		end
+
+		println("\ntime = ", t, " s")
+
 end
 
 

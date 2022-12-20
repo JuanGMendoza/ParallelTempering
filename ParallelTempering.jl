@@ -13,12 +13,12 @@ function parallel_tempering(h::Hamiltonian, fileName::String)
 	size::UInt8 = length(h.bonds)
 
 	replica_list::Vector{Replica} = Vector{Replica}(undef, N)
-
 	state_matrix::Vector{UInt128} = Vector{UInt128}(undef, size)
 	row::UInt128 = 0
-	#Defining these is what Tameem suggested we research
 	temperatures::Vector{Float64} = Vector{Float64}(1:N)
+	energy::Float64 = 0
 	jldsave(fileName, measurement="magnetization",temps=temperatures)
+	indices::StepRange{Int64, Int64} = (0:0)
 
 	#Generate Replicas
 	for i = (1:size)
@@ -37,8 +37,8 @@ function parallel_tempering(h::Hamiltonian, fileName::String)
 	#it is functionally a boolean
 	toggle::UInt8 = 0
 
-	j = 1
-	while j <= 1000
+	max_steps::UInt16 = 1000
+	for j in (1:max_steps)
 
 		toggle = toggle ⊻ 1
 
@@ -57,26 +57,19 @@ function parallel_tempering(h::Hamiltonian, fileName::String)
 
 		for replica in replica_list
 
-			#println("T = ", replica.T, "\n")
-			#printState(replica, state_matrix)
 			evolve!(replica, h, state_matrix)
-			#print("\n")
-			#printState(replica, state_matrix)
-			#readline()
+
 		end
 
-#=
+
 		for i in indices
 
 			if propose_exchange(replica_list[i], replica_list[i+1], h, state_matrix)
 
 				exchange!(replica_list, UInt8(i))
-				true
 
 			end
 		end
-		=#
-		j += 1
 		
 	end
 
