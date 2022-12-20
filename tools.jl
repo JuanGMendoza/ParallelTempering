@@ -54,17 +54,21 @@ function energy_difference(ID::UInt8, different_spin::UInt64, state_matrix::Vect
 	energy_diff_interactions = 0
 	energy_diff_field = hamiltonian.h * (-1)^!(bits(state_matrix[different_spin])[ID])
 
-
+	
 	if length(bonds[1]) != 0
 
 		sign = !(bits(state_matrix[different_spin])[ID])
 
+
 		i = 1
 		for bond in bonds
 
+			sign = !(bits(state_matrix[different_spin])[ID])
 			for spin in bond
+				
 				sign = bits(state_matrix[spin])[ID] ⊻ sign
 			end
+			
 			if sign == false
 				energy_diff_interactions += strengths[different_spin][i] 
 			else 
@@ -306,23 +310,6 @@ function load_and_calc_expectation(fileName::String, T::Float64)
 	return name, expectation/timesteps
 end
 
-
-function calculate_expectation(operator::Function, replicas::Vector{Replica})
-
-	average::Float64 = 0
-
-
-	for replica in replicas
-
-		state::Vector{UInt8} = Vector{UInt8}(undef, length(state_matrix))
-		for spin in (1:length(state_matrix))
-			state[spin] = UInt8(bits(state_matrix[spin])[replica.ID])
-		end
-		average += operator(state)
-	end
-	return average/length(replicas)
-
-end
 
 function magnetization(state::Vector{UInt8})
 
