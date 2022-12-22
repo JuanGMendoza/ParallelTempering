@@ -18,14 +18,18 @@ function generate_required_files()
 		h1 = Hamiltonian(1, [[[]],[[]],[[]],[[]]], [[],[], [], []])
 		bonds = [[[2], [3], [4]] ,[[1], [3], [4] ] ,[[1], [2], [4] ] ,[[1], [2], [3]]]
 		h2 = Hamiltonian(2, bonds, [[1, 1, 1], [1,1,1], [1,1,1], [1,1,1]])
+		temperatures::Vector{Float64} = Vector{Float64}(1:10)
 		println("\n")
+		#print("Running simulations...[00%]\r")
+		print("Running simulations[0%]  " * repeat(".", 50 ) *"\r")
 		t = @elapsed begin
 			for i in (1:10)
 
 				
-				parallel_tempering(h1, "unit-test1_" * string(i) * ".jld2")
-				parallel_tempering(h2, "unit-test2_" * string(i) * ".jld2")
-				print("Running simulations...[" *string(i) *"0%]\r")
+				parallel_tempering(h1, temperatures, "./unit_tests/unit-test1_" * string(i) * ".jld2")
+				parallel_tempering(h2, temperatures, "./unit_tests/unit-test2_" * string(i) * ".jld2")
+				print("Running simulations[" *string(i) *"0%]  "* repeat("#", i*5) * repeat(".", 50 - i*5) *"\r")
+				
 				
 			end
 		end

@@ -236,8 +236,6 @@ function save_measurements(fileName::String, replicas::Vector{Replica}, t::Int64
 	end
 end
 
-
-
 #returns the expectation value of all measurements stored in fileName at temperature T
 function load_and_calc_expectation(fileName::String, T::Float64)
 

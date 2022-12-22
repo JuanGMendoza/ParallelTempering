@@ -19,7 +19,7 @@ function test1(temperature=1, correct=-3.0463766238230594, hamiltonian="1")
 	end
 
 	for sample in (1:10)
-		samples[sample] = load_and_calc_expectation("unit-test" * hamiltonian * "_" * string(sample) * ".jld2", Float64(temperature))[2]
+		samples[sample] = load_and_calc_expectation("./unit_tests/unit-test" * hamiltonian * "_" * string(sample) * ".jld2", Float64(temperature))[2]
 	end
 
 	PT = mean(samples)

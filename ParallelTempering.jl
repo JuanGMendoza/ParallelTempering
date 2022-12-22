@@ -3,19 +3,18 @@ using Bits
 include("tools.jl")
 
 
-function parallel_tempering(h::Hamiltonian, fileName::String)
+function parallel_tempering(h::Hamiltonian, temperatures::Vector{Float64}, fileName::String)
 
 
-	
-	#Number of replicas
-	N::UInt8 = 10
 	#Size of the states
 	size::UInt8 = length(h.bonds)
 
+	#Number of Replicas
+	N = length(temperatures)
 	replica_list::Vector{Replica} = Vector{Replica}(undef, N)
 	state_matrix::Vector{UInt128} = Vector{UInt128}(undef, size)
 	row::UInt128 = 0
-	temperatures::Vector{Float64} = Vector{Float64}(1:N)
+	
 	energy::Float64 = 0
 	jldsave(fileName, measurement="magnetization",temps=temperatures)
 	indices::StepRange{Int64, Int64} = (0:0)
