@@ -220,7 +220,7 @@ function save_measurements(fileName::String, replicas::Vector{Replica}, t::Int64
 
 	groupString::String = "t" * string(t) * "/" 
 
-	jldopen(fileName, "a+") do file
+	jldopen(fileName * "_meas.jld2", "a+") do file
 
 		i::UInt8 = 1
 		for replica in replicas
@@ -437,20 +437,6 @@ function load_T_history(fileName::String, T::UInt8)
 	end
 	
 	return replicaList
-
-end
-
-
-#################Deprecated#######################
-function flip_random_bit(state::Vector{UInt8})
-
-	state_copy::Vector{UInt8} = copy(state)
-
-	flip::UInt8 = rand(1:length(state))
-
-	state_copy[flip] = state_copy[flip] ⊻ 1
-
-	return state_copy
 
 end
 

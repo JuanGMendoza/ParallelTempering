@@ -3,7 +3,8 @@ using Bits
 include("tools.jl")
 
 
-function parallel_tempering(h::Hamiltonian, temperatures::Vector{Float64}, fileName::String)
+#Parallel Tempering where each timestep, only a specified measurement operator is saved for every replica
+function parallel_tempering(h::Hamiltonian, temperatures::Vector{Float64}, fileName::String, measurement::Function, name::String)
 
 
 	#Size of the states
@@ -16,7 +17,8 @@ function parallel_tempering(h::Hamiltonian, temperatures::Vector{Float64}, fileN
 	row::UInt128 = 0
 	
 	energy::Float64 = 0
-	jldsave(fileName, measurement="magnetization",temps=temperatures)
+
+	jldsave(fileName * "_meas.jld2", measurement=name ,temps=temperatures)
 	indices::StepRange{Int64, Int64} = (0:0)
 
 	#Generate Replicas
