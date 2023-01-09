@@ -242,6 +242,7 @@ function load_and_calc_expectation(fileName::String, T::Float64)
 	expectation::Float64 = 0
 	timesteps::UInt64 = 0
 	name::String = ""
+	
 	jldopen(fileName, "r") do file
 		name = file["measurement"]
 
