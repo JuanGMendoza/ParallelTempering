@@ -6,24 +6,25 @@ include("tools.jl")
 """
     parallel_tempering(h::Hamiltonian, temperatures::Vector{Float64}, fileName::String, measurement::Function, name::String, steps::UInt64)
 
-    Run parallel tempering given all the parameters, measure a specific operator for every replica in each step, and store the value on disk.
+Run parallel tempering given all the parameters, measure a specific operator for every replica in each step, and store the value on disk.
 
-	# Arguments
-   - `n::Integer`: the number of elements to compute.
+# Arguments
 
-   - `dim::Integer=1`: the dimensions along which to perform the computation.
+- `n::Integer`: the number of elements to compute.
 
-   - `h::Hamiltonian`: the hamiltonian of the system to be simulated. More details on this structure in tools.jl.
+- `dim::Integer=1`: the dimensions along which to perform the computation.
 
-   - `temperatures::Vector{Float64}`: a sorted list (increasing) of the temperatures to assign to each corresponding replica. This determines the number of replicas.
+- `h::Hamiltonian`: the hamiltonian of the system to be simulated. More details on this structure in tools.jl.
 
-   - `fileName::String`: the name to be assigned to the file on disk containing measurement outcomes. Omit any file extensions.
+- `temperatures::Vector{Float64}`: a sorted list (increasing) of the temperatures to assign to each corresponding replica. This determines the number of replicas.
 
-   - `measurement::Function`: the measurement to be calculated at every iteration. A function that takes in a state vector and returns a scalar. See tools.jl/magnetization.
+- `fileName::String`: the name to be assigned to the file on disk containing measurement outcomes. Omit any file extensions.
 
-   - `name::Function`: the name of the measurement function. Ex: magnetization
+- `measurement::Function`: the measurement to be calculated at every iteration. A function that takes in a state vector and returns a scalar. See tools.jl/magnetization.
 
-   - `steps::UInt64`: the number of steps to run the simulation for.
+- `name::Function`: the name of the measurement function. Ex: magnetization
+
+- `steps::UInt64`: the number of steps to run the simulation for.
 
 
 """

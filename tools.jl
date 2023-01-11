@@ -10,26 +10,27 @@ using Bits
 """
     mutable struct Hamiltonian
 
-    represents a hamiltonian with an external field term, and any-body interaction terms for a spin 1/2 system
+represents a hamiltonian with an external field term, and any-body interaction terms for a spin 1/2 system
 
-    # Attributes
+# Attributes
 
-    - `h::Float64`: external magnetic field. A positive value makes spin -1 lower energy than spin 1, and vice versa
+- `h::Float64`: external magnetic field. A positive value makes spin -1 lower energy than spin 1, and vice versa
 
-    - `bonds::Vector{Vector{Vector{UInt64}}}`: interaction terms where: the first index represents the the spin that 
-    the bonds correspond to, the second index represents the bond number, and the third index iterates through all the
-	spins that the bond involves
+- `bonds::Vector{Vector{Vector{UInt64}}}`: interaction terms where: the first index represents the the spin that 
+the bonds correspond to, the second index represents the bond number, and the third index iterates through all the
+spins that the bond involves
 
-	# Example
-	bonds = [ [ [2], [3] ], [ [1], [3] ], [ [1], [2] ] ]
-	represents the bonds for a 3 spin fully connected system with 2 body interactions, in other words, it represents the bonds
-	1 <-> 2
-	1 <-> 3
-	2 <-> 3
+# Example
+bonds = [ [ [2], [3] ], [ [1], [3] ], [ [1], [2] ] ]
+represents the bonds for a 3 spin fully connected system with 2 body interactions, in other words, it represents the bonds
+1 <-> 2
+1 <-> 3
+2 <-> 3
 
-	-`strength_bonds::Vector{Vector{Float64}}`: contains the bond strenght of the bonds contained in the variable above, strength of bond bonds[i][k] is strength_bonds[i][k]
+-`strength_bonds::Vector{Vector{Float64}}`: contains the bond strenght of the bonds contained in the variable above, strength of bond bonds[i][k] is strength_bonds[i][k]
 
 """
+
 mutable struct Hamiltonian
 
 	h::Float64
@@ -44,43 +45,63 @@ end
 """
     mutable struct Replica
 
-    holds all information attached to a replica, except for the state configuration of the replica. 
-    All the states are stored together in a state_matrix::Vector{UInt128}
+holds all information attached to a replica, except for the state configuration of the replica. 
+All the states are stored together in a state_matrix::Vector{UInt128}
 
-    # Attributes
+# Attributes
 
-    - `T::UInt
+- `T::Float64`: temperature
+
+- `B::Float64`: inverse temperature. 1/T. Redundant information, just meant to reduce computation time
+
+- `ID::UInt8`: index of replica at first iteration. Used to identify the replica as it explores T space
+
+- `bitsToFlip::Queue{UInt64}`: list of bits to be flipped. Ensures every bit is flipped once, while keeping some randomness
+
+- `curEnergy::Float64`: current energy of the replica
 
 """
+
 mutable struct Replica
 
-	#Temperature
 	T::Float64
 
-	#Inverse Temperature
 	B::Float64
 
-	#Number to identify the replica as it moves through B space
 	ID::UInt8
 
-	#list of bits to be flipped during markov evolution
 	bitsToFlip::Queue{UInt64}
 
-	#energy of the current state of the replica
 	curEnergy::Float64
 
 end
 
 
+"""
+    energy_difference(ID::UInt8, different_spin::UInt64, state_matrix::Vector{UInt128}, hami::Hamiltonian)
 
-function energy_difference(ID::UInt8, different_spin::UInt64, state_matrix::Vector{UInt128}, hamiltonian::Hamiltonian)
+compute and return the difference in energy between a state, and a new one that differs by one flipped spin
+
+# Arguments
+
+- `ID::UInt8`: ID of the replica to which the state belongs.
+
+- `different_spin::UInt64`: index of the spin to be flipped to compare with original (unflipped) state.
+
+- `state_matrix::Vector{UInt128}`: vector containing all states in the simulation.
+
+- `hami::Hamiltonian`: hamiltonian that dictates the energy of the states
+
+"""
+
+function energy_difference(ID::UInt8, different_spin::UInt64, state_matrix::Vector{UInt128}, hami::Hamiltonian)
 
 	
 	sign::UInt8 = !(bits(state_matrix[different_spin])[ID])
-	bonds::Vector{Vector{UInt64}} = hamiltonian.bonds[different_spin]
-	strengths::Vector{Vector{Float64}} = hamiltonian.strength_bonds
+	bonds::Vector{Vector{UInt64}} = hami.bonds[different_spin]
+	strengths::Vector{Vector{Float64}} = hami.strength_bonds
 	energy_diff_interactions::Float64 = 0
-	energy_diff_field::Float64 = hamiltonian.h * (-1)^!(bits(state_matrix[different_spin])[ID])
+	energy_diff_field::Float64 = hami.h * (-1)^!(bits(state_matrix[different_spin])[ID])
 
 	
 	if length(bonds[1]) != 0
@@ -112,8 +133,15 @@ function energy_difference(ID::UInt8, different_spin::UInt64, state_matrix::Vect
 
 end
 
-#Returns the energy corresponding to the input state in state_matrix corresponding to replica ID
-function evaluate_energy(ID::UInt8, h::Hamiltonian, state_matrix::Vector{UInt128})
+
+"""
+    evaluate_energy(ID::UInt8, hami::Hamiltonian, state_matrix::Vector{UInt128})
+
+compute and return the energy of a replica
+
+"""
+
+function evaluate_energy(ID::UInt8, hami::Hamiltonian, state_matrix::Vector{UInt128})
 
 	E::Float64 = 0
 
@@ -121,13 +149,13 @@ function evaluate_energy(ID::UInt8, h::Hamiltonian, state_matrix::Vector{UInt128
 	bondIndex::UInt16 = 0
 	bondSign::Bool = false
 
-	for spin in (1:length(h.bonds))
-		E += h.h * (-1)^bits(state_matrix[spin])[ID]
+	for spin in (1:length(hami.bonds))
+		E += hami.h * (-1)^bits(state_matrix[spin])[ID]
 
 		bondIndex = 1
 
 
-		for bond in h.bonds[spin]
+		for bond in hami.bonds[spin]
 			
 			if length(bond) != 0
 				bondSign = bits(state_matrix[spin])[ID]
@@ -144,7 +172,7 @@ function evaluate_energy(ID::UInt8, h::Hamiltonian, state_matrix::Vector{UInt128
 				
 				if includeBond == true
 					
-					E += h.strength_bonds[spin][bondIndex] * ((-1)^(bondSign))
+					E += hami.strength_bonds[spin][bondIndex] * ((-1)^(bondSign))
 				end
 			end
 			bondIndex += 1
@@ -153,6 +181,12 @@ function evaluate_energy(ID::UInt8, h::Hamiltonian, state_matrix::Vector{UInt128
 	return E 
 end
 
+"""
+	printState(replica::Replica, state_matrix::Vector{UInt128})
+
+print the spins of a given replica
+
+"""
 function printState(replica::Replica, state_matrix::Vector{UInt128})
 
 	for spin in (1:length(state_matrix))
@@ -166,8 +200,13 @@ function printState(replica::Replica, state_matrix::Vector{UInt128})
 end
 
 
-#Markov chain evolution
-function evolve!(replica::Replica ,hami::Hamiltonian, state_matrix::Vector{UInt128})
+"""
+	evolve!(replica::Replica, hami::Hamiltonian, state_matrix::Vector{UInt128})
+
+Perform a markov chain evolution 
+	
+"""
+function evolve!(replica::Replica, hami::Hamiltonian, state_matrix::Vector{UInt128})
 
 	random_bit::UInt64 = 0
 	criterion::Float64 = 0
