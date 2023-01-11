@@ -3,8 +3,31 @@ using Bits
 include("tools.jl")
 
 
-#Parallel Tempering where each timestep, only a specified measurement operator is saved for every replica
-function parallel_tempering(h::Hamiltonian, temperatures::Vector{Float64}, fileName::String, measurement::Function, name::String)
+"""
+    parallel_tempering(h::Hamiltonian, temperatures::Vector{Float64}, fileName::String, measurement::Function, name::String, steps::UInt64)
+
+    Run parallel tempering given all the parameters, measure a specific operator for every replica in each step, and store the value on disk.
+
+	# Arguments
+   - `n::Integer`: the number of elements to compute.
+
+   - `dim::Integer=1`: the dimensions along which to perform the computation.
+
+   - `h::Hamiltonian`: the hamiltonian of the system to be simulated. More details on this structure in tools.jl.
+
+   - `temperatures::Vector{Float64}`: a sorted list (increasing) of the temperatures to assign to each corresponding replica. This determines the number of replicas.
+
+   - `fileName::String`: the name to be assigned to the file on disk containing measurement outcomes. Omit any file extensions.
+
+   - `measurement::Function`: the measurement to be calculated at every iteration. A function that takes in a state vector and returns a scalar. See tools.jl/magnetization.
+
+   - `name::Function`: the name of the measurement function. Ex: magnetization
+
+   - `steps::UInt64`: the number of steps to run the simulation for.
+
+
+"""
+function parallel_tempering(h::Hamiltonian, temperatures::Vector{Float64}, fileName::String, measurement::Function, name::String, steps::UInt64)
 
 
 	#Size of the states
@@ -12,6 +35,7 @@ function parallel_tempering(h::Hamiltonian, temperatures::Vector{Float64}, fileN
 
 	#Number of Replicas
 	N = length(temperatures)
+
 	replica_list::Vector{Replica} = Vector{Replica}(undef, N)
 	state_matrix::Vector{UInt128} = Vector{UInt128}(undef, size)
 	row::UInt128 = 0
@@ -38,8 +62,7 @@ function parallel_tempering(h::Hamiltonian, temperatures::Vector{Float64}, fileN
 	#it is functionally a boolean
 	toggle::UInt8 = 0
 
-	max_steps::UInt16 = 1000
-	for j in (1:max_steps)
+	for j in (1:steps)
 
 		toggle = toggle ⊻ 1
 
@@ -53,7 +76,7 @@ function parallel_tempering(h::Hamiltonian, temperatures::Vector{Float64}, fileN
 			indices = (1 + toggle : 2 : N - toggle)
 		end
 
-		save_measurements(fileName, replica_list, j, magnetization, state_matrix)
+		save_measurements(fileName, replica_list, j, measurement, state_matrix)
 		#save_all_history(fileName, replica_list, j)
 
 		for replica in replica_list

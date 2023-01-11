@@ -26,8 +26,8 @@ function generate_required_files()
 			for i in (1:10)
 
 				
-				parallel_tempering(h1, temperatures, "./unit_tests/unit-test1_" * string(i), magnetization, "magnetization" )
-				parallel_tempering(h2, temperatures, "./unit_tests/unit-test2_" * string(i), magnetization, "magnetization" )
+				parallel_tempering(h1, temperatures, "./unit_tests/unit-test1_" * string(i), magnetization, "magnetization", UInt64(1000))
+				parallel_tempering(h2, temperatures, "./unit_tests/unit-test2_" * string(i), magnetization, "magnetization", UInt64(1000))
 				print("Running simulations[" *string(i) *"0%]  "* repeat("#", i*5) * repeat(".", 50 - i*5) *"\r")
 				
 				

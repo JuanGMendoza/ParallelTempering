@@ -7,27 +7,55 @@ using Bits
 #spin 1 -> 0
 
 
-#H = h * spins + Ji,j * spin_i * spin_j
+"""
+    mutable struct Hamiltonian
+
+    represents a hamiltonian with an external field term, and any-body interaction terms for a spin 1/2 system
+
+    # Attributes
+
+    - `h::Float64`: external magnetic field. A positive value makes spin -1 lower energy than spin 1, and vice versa
+
+    - `bonds::Vector{Vector{Vector{UInt64}}}`: interaction terms where: the first index represents the the spin that 
+    the bonds correspond to, the second index represents the bond number, and the third index iterates through all the
+	spins that the bond involves
+
+	# Example
+	bonds = [ [ [2], [3] ], [ [1], [3] ], [ [1], [2] ] ]
+	represents the bonds for a 3 spin fully connected system with 2 body interactions, in other words, it represents the bonds
+	1 <-> 2
+	1 <-> 3
+	2 <-> 3
+
+	-`strength_bonds::Vector{Vector{Float64}}`: contains the bond strenght of the bonds contained in the variable above, strength of bond bonds[i][k] is strength_bonds[i][k]
+
+"""
 mutable struct Hamiltonian
 
-	#Local Field
 	h::Float64
 
-	#Interaction Terms where the first index represents the the spin that the bonds correspond to
-	#the second index represents the bond number, and the third index iterates through all the
-	#spins that the bond involves
 	bonds::Vector{Vector{Vector{UInt64}}}
 
-	#Contains the bond strength of the bonds defined by the structure above
-	#strength of bond bonds[i][k] is strength_bonds[i][k]
 	strength_bonds::Vector{Vector{Float64}}
 
 end
 
+
+"""
+    mutable struct Replica
+
+    holds all information attached to a replica, except for the state configuration of the replica. 
+    All the states are stored together in a state_matrix::Vector{UInt128}
+
+    # Attributes
+
+    - `T::UInt
+
+"""
 mutable struct Replica
 
 	#Temperature
-	T::UInt8
+	T::Float64
 
 	#Inverse Temperature
 	B::Float64
@@ -216,7 +244,7 @@ end
 #Creates a file containing measurements for input operator for every temperature
 #Receives a replica list whose order matches the temperature list
 # t represents the timestep of the simulation
-function save_measurements(fileName::String, replicas::Vector{Replica}, t::Int64, operator::Function, state_matrix::Vector{UInt128})
+function save_measurements(fileName::String, replicas::Vector{Replica}, t::UInt64, operator::Function, state_matrix::Vector{UInt128})
 
 	groupString::String = "t" * string(t) * "/" 
 
