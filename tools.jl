@@ -30,7 +30,6 @@ represents the bonds for a 3 spin fully connected system with 2 body interaction
 -`strength_bonds::Vector{Vector{Float64}}`: contains the bond strenght of the bonds contained in the variable above, strength of bond bonds[i][k] is strength_bonds[i][k]
 
 """
-
 mutable struct Hamiltonian
 
 	h::Float64
@@ -61,7 +60,6 @@ All the states are stored together in a state_matrix::Vector{UInt128}
 - `curEnergy::Float64`: current energy of the replica
 
 """
-
 mutable struct Replica
 
 	T::Float64
@@ -93,7 +91,6 @@ compute and return the difference in energy between a state, and a new one that 
 - `hami::Hamiltonian`: hamiltonian that dictates the energy of the states
 
 """
-
 function energy_difference(ID::UInt8, different_spin::UInt64, state_matrix::Vector{UInt128}, hami::Hamiltonian)
 
 	
@@ -140,7 +137,6 @@ end
 compute and return the energy of a replica
 
 """
-
 function evaluate_energy(ID::UInt8, hami::Hamiltonian, state_matrix::Vector{UInt128})
 
 	E::Float64 = 0
@@ -212,7 +208,7 @@ function evolve!(replica::Replica, hami::Hamiltonian, state_matrix::Vector{UInt1
 	criterion::Float64 = 0
 
 	if isempty(replica.bitsToFlip)
-		refill_random_bits!(replica, length(hami.bonds))
+		refill_random_bits!(replica, UInt8(length(hami.bonds)))
 	end
 
 	random_bit = dequeue!(replica.bitsToFlip)
@@ -237,6 +233,13 @@ function evolve!(replica::Replica, hami::Hamiltonian, state_matrix::Vector{UInt1
 
 end
 
+"""
+    propose_exchange(replica1::Replica, replica2::Replica, h::Hamiltonian, state_matrix::Vector{UInt128})
+
+proposes exchange of two different replicas based off their temperatures and energies as described in equation 2.7
+of https://arxiv.org/abs/cond-mat/9512035 returns a boolean .
+
+"""
 function propose_exchange(replica1::Replica, replica2::Replica, h::Hamiltonian, state_matrix::Vector{UInt128})
 
 	delta::Float64 = -(replica1.B - replica2.B)*(replica1.curEnergy - replica2.curEnergy)
@@ -260,7 +263,14 @@ function propose_exchange(replica1::Replica, replica2::Replica, h::Hamiltonian, 
 end
 
 
-#exchanges the replicas (but not their temperature), replica_list[index] <-> replica_list[index + 1]
+"""
+	exchange!(replicaList::Vector{Replica}, index::UInt8)
+	
+swaps replica at index with replica at index + 1 by modifying the input replicaList, returns nothing.
+
+exchanges the replicas (but not their temperature), replica_list[index] <-> replica_list[index + 1].
+
+"""
 function exchange!(replicaList::Vector{Replica}, index::UInt8)
 
 	#Discuss efficiency of this
@@ -279,14 +289,31 @@ function exchange!(replicaList::Vector{Replica}, index::UInt8)
 
 end
 
+"""
+    initialize_measurement_file(fileName::String, measurementName::String, tempList::Vector{Float64})
 
-#Creates a file containing measurements for input operator for every temperature
-#Receives a replica list whose order matches the temperature list
-# t represents the timestep of the simulation
+	initialize file meant to be later called by save_measurements() to sample measurements from a simulation
+
+"""
+function initialize_measurement_file(fileName::String, measurementName::String, tempList::Vector{Float64})
+
+	jldsave(fileName * "_meas.jld2", measurement=measurementName ,temperatures=tempList)
+end
+
+"""
+
+	save_measurements(fileName::String, replicas::Vector{Replica}, t::UInt64, operator::Function, state_matrix::Vector{UInt128})
+
+Create a file containing measurement specified by "operator::Function" for every Replica in replicas for iterarion t of the simulation.
+
+File should already exist (created by initialize_measurement_file()) before calling this function. Measurement file should always end 
+with _meas.jld2. These files are saved using JLD2 groups (https://github.com/JuliaIO/JLD2.jl#groups).  
+
+"""
 function save_measurements(fileName::String, replicas::Vector{Replica}, t::UInt64, operator::Function, state_matrix::Vector{UInt128})
 
 	groupString::String = "t" * string(t) * "/" 
-
+	
 	jldopen(fileName * "_meas.jld2", "a+") do file
 
 		i::UInt8 = 1
@@ -299,54 +326,50 @@ function save_measurements(fileName::String, replicas::Vector{Replica}, t::UInt6
 
 			file[groupString * string(i) * "/measurement"] = operator(state)
 			i = i + 1
+
 		end
+		
 	end
 end
 
-#returns the expectation value of all measurements stored in fileName at temperature T
-function load_and_calc_expectation(fileName::String, T::Float64)
+"""
+    load_and_calc_expectation(fileName::String, T::Float64)
+
+load a _meas.jld2 file (created by save_measurements()) and calculate the expectation value for the temperature located at index.
+
+If you are not sure which index contains the temperature you desire to calculate, every _meas.jld2 file should contain a variable 
+`temperatures` containing the list of temperatures that correspond to said file (if initialized correctly with initialize_measurement_file())
+"""
+function load_and_calc_expectation(fileName::String, index::UInt64)
 
 	expectation::Float64 = 0
 	timesteps::UInt64 = 0
 	name::String = ""
 	
-	jldopen(fileName, "r") do file
+	jldopen(fileName * "_meas.jld2", "r") do file
 		name = file["measurement"]
 
 		timesteps = length(keys(file)) - 2
 
-
-		indexOfDesiredT = 0
 		replicasPerTimestep = length(file["temps"])
 
-		for j in (1:replicasPerTimestep)
 
-			if file["temps"][j] == T
-			 	indexOfDesiredT = j
-			 	break
-			end
-		end 
-
-		if indexOfDesiredT == 0
-
-			println("The requested T, was not found amongst the temperatures available in " * filename * string(file["temps"]))
-
-			expectation = 0
-
-		
-
-		else
-			for j in (1:timesteps)
+		for j in (1:timesteps)
 				
-				expectation += file["t" * string(j) * "/" * string(indexOfDesiredT) * "/measurement"]
-			end
+			expectation += file["t" * string(j) * "/" * string(index) * "/measurement"]
 		end
+		
 	end
 
 	return name, expectation/timesteps
 end
 
+"""
+	magnetization(state::Vector{UInt8})
 
+example of measurement function used to be passed into save_measurements()
+
+"""
 function magnetization(state::Vector{UInt8})
 
 	m = 0 
@@ -357,10 +380,14 @@ function magnetization(state::Vector{UInt8})
 	return m
 end
 
+"""
+    refill_random_bits!(replica::Replica, size::UInt8)
 
+
+"""
 #This function takes in a replica and the state size and it
 #replaces the replica.bitsToFlip queue to a new random one
-function refill_random_bits!(replica::Replica, size)
+function refill_random_bits!(replica::Replica, size::UInt8)
 
 	randomList::Vector{UInt64} = collect(1:size)
 

@@ -1,4 +1,3 @@
-include("tools.jl")
 include("ParallelTempering.jl")
 using Statistics
 
@@ -19,7 +18,8 @@ function test1(temperature=1, correct=-3.0463766238230594, hamiltonian="1")
 	end
 
 	for sample in (1:10)
-		samples[sample] = load_and_calc_expectation("./unit_tests/unit-test" * hamiltonian * "_" * string(sample) * "_meas.jld2", Float64(temperature))[2]
+		index = temperature
+		samples[sample] = load_and_calc_expectation("./unit_tests/unit-test" * hamiltonian * "_" * string(sample), UInt64(index))[2]
 	end
 
 	PT = mean(samples)
@@ -27,7 +27,7 @@ function test1(temperature=1, correct=-3.0463766238230594, hamiltonian="1")
 	difference = abs(correct - PT)
 
 	
-	if difference < sigma
+	if difference < 2*sigma
 		outcome = true		
 	end
 

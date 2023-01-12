@@ -10,19 +10,14 @@ Run parallel tempering given all the parameters, measure a specific operator for
 
 # Arguments
 
-- `n::Integer`: the number of elements to compute.
-
-- `dim::Integer=1`: the dimensions along which to perform the computation.
-
 - `h::Hamiltonian`: the hamiltonian of the system to be simulated. More details on this structure in tools.jl.
-
 - `temperatures::Vector{Float64}`: a sorted list (increasing) of the temperatures to assign to each corresponding replica. This determines the number of replicas.
 
 - `fileName::String`: the name to be assigned to the file on disk containing measurement outcomes. Omit any file extensions.
 
 - `measurement::Function`: the measurement to be calculated at every iteration. A function that takes in a state vector and returns a scalar. See tools.jl/magnetization.
 
-- `name::Function`: the name of the measurement function. Ex: magnetization
+- `name::Function`: pointer to the measurement function that takes in a state and returns a scalar. Ex: magnetization
 
 - `steps::UInt64`: the number of steps to run the simulation for.
 
